@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +47,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.repository.WorkoutExerciseItem
@@ -288,9 +291,20 @@ private fun ParamField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var text by remember { mutableStateOf(value) }
+
+    LaunchedEffect(value) {
+        if (value != text) {
+            text = value
+        }
+    }
+
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = text,
+        onValueChange = { newText ->
+            text = newText
+            onValueChange(newText)
+        },
         label = { Text(label, fontSize = 12.sp) },
         modifier = modifier.height(56.dp),
         singleLine = true,

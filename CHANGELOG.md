@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.10 - 2026-06-30
+
+- Fixed cursor jumping in numeric input fields while typing workout values.
+- Improved weight, reps, sets, and rest fields so typed text is not reformatted on every key press.
+
 ## 0.3.9 - 2026-06-30
 
 - Added a visible start button for custom workouts in "My workouts".

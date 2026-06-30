@@ -426,9 +426,20 @@ private fun WeightField(
     onValueChange: (Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var text by remember { mutableStateOf(if (value == 0.0) "" else formatWeight(value)) }
+
+    LaunchedEffect(value) {
+        val formatted = if (value == 0.0) "" else formatWeight(value)
+        val currentNumber = text.replace(',', '.').toDoubleOrNull()
+        if (currentNumber != value && text != formatted) {
+            text = formatted
+        }
+    }
+
     OutlinedTextField(
-        value = if (value == 0.0) "" else formatWeight(value),
+        value = text,
         onValueChange = { str ->
+            text = str
             val parsed = str.replace(',', '.').toDoubleOrNull() ?: 0.0
             onValueChange(parsed)
         },
@@ -445,9 +456,20 @@ private fun RepsField(
     onValueChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var text by remember { mutableStateOf(value.toString()) }
+
+    LaunchedEffect(value) {
+        val formatted = value.toString()
+        val currentNumber = text.toIntOrNull()
+        if (currentNumber != value && text != formatted) {
+            text = formatted
+        }
+    }
+
     OutlinedTextField(
-        value = value.toString(),
+        value = text,
         onValueChange = { str ->
+            text = str
             str.toIntOrNull()?.let { if (it >= 0) onValueChange(it) }
         },
         modifier = modifier.height(52.dp),
