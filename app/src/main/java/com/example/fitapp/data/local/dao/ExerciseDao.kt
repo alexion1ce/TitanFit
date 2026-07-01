@@ -45,6 +45,9 @@ interface ExerciseDao {
     @Query("SELECT id, code FROM exercises")
     suspend fun getAllCodes(): List<ExerciseCode>
 
+    @Query("SELECT code FROM exercises")
+    suspend fun getExistingCodes(): List<String>
+
     @Query("SELECT COUNT(*) FROM exercises")
     suspend fun count(): Int
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 - 2026-07-01
+
+- Expanded the exercise catalog from 30 to 70 exercises for broader gym testing.
+- Added more chest, back, leg, shoulder, biceps, triceps, abs, and glute movements.
+- Added missing exercise seeding on app update so new catalog items appear without clearing user data.
+
 ## 0.3.10 - 2026-06-30
 
 - Fixed cursor jumping in numeric input fields while typing workout values.

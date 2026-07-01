@@ -32,11 +32,17 @@ class DatabaseInitializer @Inject constructor(
         if (equipmentDao.count() == 0) {
             equipmentDao.insertAll(DatabaseSeeder.equipment)
         }
-        if (exerciseDao.count() == 0) {
-            exerciseDao.insertAll(DatabaseSeeder.exercises)
-        }
+        seedMissingExercises()
         if (workoutDao.countPresets() == 0) {
             seedPresets()
+        }
+    }
+
+    private suspend fun seedMissingExercises() {
+        val existingCodes = exerciseDao.getExistingCodes().toSet()
+        val missingExercises = DatabaseSeeder.exercises.filter { it.code !in existingCodes }
+        if (missingExercises.isNotEmpty()) {
+            exerciseDao.insertAll(missingExercises)
         }
     }
 
