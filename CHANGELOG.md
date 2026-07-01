@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 - 2026-07-01
+
+- Added explicit artwork mappings for all 70 catalog exercises.
+- Mapped newly added gym exercises to the closest available movement illustrations instead of broad muscle-group fallback images.
+
 ## 0.4.0 - 2026-07-01
 
 - Expanded the exercise catalog from 30 to 70 exercises for broader gym testing.
