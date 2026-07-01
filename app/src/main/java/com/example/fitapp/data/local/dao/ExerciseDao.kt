@@ -48,6 +48,9 @@ interface ExerciseDao {
     @Query("SELECT code FROM exercises")
     suspend fun getExistingCodes(): List<String>
 
+    @Query("DELETE FROM exercises WHERE code IN (:codes)")
+    suspend fun deleteByCodes(codes: List<String>)
+
     @Query("SELECT COUNT(*) FROM exercises")
     suspend fun count(): Int
 }

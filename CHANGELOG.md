@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2 - 2026-07-01
+
+- Removed "Наклоны со штангой good morning" from the exercise catalog.
+- Added cleanup for the removed exercise on app update so it disappears from existing installs.
+
 ## 0.4.1 - 2026-07-01
 
 - Added explicit artwork mappings for all 70 catalog exercises.

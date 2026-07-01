@@ -32,10 +32,15 @@ class DatabaseInitializer @Inject constructor(
         if (equipmentDao.count() == 0) {
             equipmentDao.insertAll(DatabaseSeeder.equipment)
         }
+        removeDeprecatedExercises()
         seedMissingExercises()
         if (workoutDao.countPresets() == 0) {
             seedPresets()
         }
+    }
+
+    private suspend fun removeDeprecatedExercises() {
+        exerciseDao.deleteByCodes(listOf("good_morning"))
     }
 
     private suspend fun seedMissingExercises() {

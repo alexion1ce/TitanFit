@@ -879,18 +879,6 @@ object DatabaseSeeder {
             imageUrl = null,
             videoUrl = "https://www.youtube.com/watch?v=9ZuXKqRbT9k",
             technique = "Колени направляйте по носкам, спину держите прямой."
-        ),
-        Exercise(
-            code = "good_morning",
-            name = "Наклоны со штангой good morning",
-            description = "Упражнение для задней цепи: ягодицы, бицепс бедра и разгибатели спины.",
-            primaryMuscleCode = "glutes",
-            secondaryMuscleCode = "back",
-            equipmentCode = "barbell",
-            difficulty = "ADVANCED",
-            imageUrl = null,
-            videoUrl = "https://www.youtube.com/watch?v=vKPGe8zb2S4",
-            technique = "Движение начинается с отвода таза назад, поясницу не округляйте."
         )
     )
 }

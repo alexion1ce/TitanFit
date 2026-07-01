@@ -197,7 +197,7 @@ private fun exerciseArtworkResId(exerciseCode: String, primaryMuscleCode: String
             R.drawable.exercise_legs_squat
         "leg_press" -> R.drawable.exercise_leg_press
         "leg_extension" -> R.drawable.exercise_leg_extension
-        "romanian_deadlift", "good_morning" -> R.drawable.exercise_romanian_deadlift
+        "romanian_deadlift" -> R.drawable.exercise_romanian_deadlift
         "leg_curl" -> R.drawable.exercise_leg_curl
         "calf_raise", "seated_calf_raise", "standing_calf_raise_machine" ->
             R.drawable.exercise_calf_raise
