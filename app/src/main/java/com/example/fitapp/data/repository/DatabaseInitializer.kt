@@ -33,6 +33,7 @@ class DatabaseInitializer @Inject constructor(
             equipmentDao.insertAll(DatabaseSeeder.equipment)
         }
         removeDeprecatedExercises()
+        updateRenamedExercises()
         seedMissingExercises()
         if (workoutDao.countPresets() == 0) {
             seedPresets()
@@ -41,6 +42,12 @@ class DatabaseInitializer @Inject constructor(
 
     private suspend fun removeDeprecatedExercises() {
         exerciseDao.deleteByCodes(listOf("good_morning"))
+    }
+
+    private suspend fun updateRenamedExercises() {
+        exerciseDao.updateNameByCode("leg_curl", "Сгибания ног в тренажёре")
+        exerciseDao.updateNameByCode("face_pull", "Тяга каната к лицу")
+        exerciseDao.updateNameByCode("machine_row", "Горизонтальная тяга в тренажёре")
     }
 
     private suspend fun seedMissingExercises() {

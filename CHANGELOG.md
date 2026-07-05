@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.5 - 2026-07-01
+
+- Corrected several exercise illustrations after checking movement mechanics: machine chest press, machine row, reverse pec deck, straight-arm pulldown, dumbbell fly, triceps pushdown, and T-bar row.
+
+## 0.4.4 - 2026-07-01
+
+- Replaced the remaining old black-and-white exercise artwork with the new color anatomical style.
+- Updated fallback category artwork so old grayscale assets no longer appear in the app.
+
+## 0.4.3 - 2026-07-01
+
+- Renamed "Сгибания ног (бицепс бедра)" to "Сгибания ног в тренажёре".
+- Added catalog name cleanup on app update so the rename appears on existing installs.
+
 ## 0.4.2 - 2026-07-01
 
 - Removed "Наклоны со штангой good morning" from the exercise catalog.

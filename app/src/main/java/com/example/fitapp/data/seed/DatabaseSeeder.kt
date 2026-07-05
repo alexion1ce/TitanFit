@@ -187,7 +187,7 @@ object DatabaseSeeder {
         ),
         Exercise(
             code = "leg_curl",
-            name = "Сгибания ног (бицепс бедра)",
+            name = "Сгибания ног в тренажёре",
             description = "Изоляция задней поверхности бедра. Сгибайте ноги, скользя валиком к ягодицам.",
             primaryMuscleCode = "legs",
             secondaryMuscleCode = null,

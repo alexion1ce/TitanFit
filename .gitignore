@@ -15,6 +15,10 @@ local.properties
 # Codex local attachments
 .codex-remote-attachments/
 
+# Local artwork review artifacts
+rejected-assets/
+tmp_*contact_sheet*.jpg
+
 # OS files
 .DS_Store
 Thumbs.db
