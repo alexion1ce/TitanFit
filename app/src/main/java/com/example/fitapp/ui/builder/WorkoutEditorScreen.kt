@@ -57,9 +57,8 @@ import com.example.fitapp.data.repository.WorkoutExerciseItem
 @Composable
 fun WorkoutEditorScreen(
     onBack: () -> Unit,
+    onSaved: () -> Unit,
     onAddExercise: () -> Unit,
-    pickedExerciseIds: LongArray? = null,
-    onPickedExerciseIdsConsumed: () -> Unit = {},
     viewModel: WorkoutEditorViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -68,14 +67,7 @@ fun WorkoutEditorScreen(
     LaunchedEffect(state.saveSuccess) {
         if (state.saveSuccess) {
             viewModel.clearSaveSuccess()
-            onBack()
-        }
-    }
-
-    LaunchedEffect(pickedExerciseIds) {
-        if (pickedExerciseIds != null && pickedExerciseIds.isNotEmpty()) {
-            viewModel.addPickedExerciseIds(pickedExerciseIds)
-            onPickedExerciseIdsConsumed()
+            onSaved()
         }
     }
 

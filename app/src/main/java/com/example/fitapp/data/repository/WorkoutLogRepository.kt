@@ -43,6 +43,16 @@ data class PersonalRecord(
     val date: Long
 )
 
+/** Короткая аналитическая строка последней тренировки для экрана прогресса. */
+data class RecentWorkoutSummary(
+    val logId: Long,
+    val workoutName: String,
+    val exerciseCount: Int,
+    val durationMin: Int,
+    val totalVolume: Double,
+    val caloriesEstimate: Int
+)
+
 @Singleton
 class WorkoutLogRepository @Inject constructor(
     private val workoutLogDao: WorkoutLogDao,
@@ -99,8 +109,8 @@ class WorkoutLogRepository @Inject constructor(
     }
 
     /** Завершает тренировку: фиксирует время окончания и длительность. */
-    suspend fun finishWorkout(logId: Long) {
-        val log = workoutLogDao.getById(logId) ?: return
+    suspend fun finishWorkout(logId: Long): Boolean {
+        val log = workoutLogDao.getById(logId) ?: return false
         val now = System.currentTimeMillis()
         val durationMin = ((now - log.startedAt) / 60_000L).toInt()
         workoutLogDao.update(
@@ -109,10 +119,15 @@ class WorkoutLogRepository @Inject constructor(
                 durationMin = durationMin
             )
         )
+        return true
     }
 
     suspend fun deleteLog(logId: Long) {
         workoutLogDao.deleteById(logId)
+    }
+
+    suspend fun resetProgress() {
+        workoutLogDao.deleteAll()
     }
 
     // ===================== ЖУРНАЛ =====================
@@ -214,6 +229,25 @@ class WorkoutLogRepository @Inject constructor(
             }
             .sortedByDescending { it.maxWeight }
             .take(limit)
+    }
+
+    /** Последние завершённые тренировки со сводными метриками. */
+    suspend fun getRecentWorkoutSummaries(limit: Int = 3): List<RecentWorkoutSummary> {
+        val logs = workoutLogDao.getAllFinished().take(limit)
+        if (logs.isEmpty()) return emptyList()
+
+        return logs.map { log ->
+            val doneSets = setLogDao.getByLog(log.id).filter { it.done }
+            val volume = doneSets.sumOf { it.weight * it.reps }
+            RecentWorkoutSummary(
+                logId = log.id,
+                workoutName = log.workoutName,
+                exerciseCount = doneSets.map { it.exerciseId }.distinct().size,
+                durationMin = log.durationMin ?: 0,
+                totalVolume = volume,
+                caloriesEstimate = (volume * 0.08).toInt().coerceAtLeast(0)
+            )
+        }
     }
 
     /** Общая статистика для шапки экрана прогресса. */

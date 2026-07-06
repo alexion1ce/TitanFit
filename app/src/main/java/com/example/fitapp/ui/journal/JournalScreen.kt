@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,22 +58,35 @@ fun JournalScreen(
             TopAppBar(title = { Text("Журнал тренировок", fontWeight = FontWeight.Bold) })
         }
     ) { padding ->
-        if (state.entries.isEmpty()) {
-            EmptyJournal(Modifier.padding(padding))
-        } else {
-            LazyColumn(
+        when {
+            state.isLoading -> Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentAlignment = Alignment.Center
             ) {
-                items(state.entries, key = { it.log.id }) { entry ->
-                    JournalCard(
-                        entry = entry,
-                        onClick = { onEntryClick(entry.log.id) },
-                        onDelete = { deleteTarget = entry }
-                    )
+                CircularProgressIndicator()
+            }
+
+            state.entries.isEmpty() -> {
+                EmptyJournal(Modifier.padding(padding))
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(state.entries, key = { it.log.id }) { entry ->
+                        JournalCard(
+                            entry = entry,
+                            onClick = { onEntryClick(entry.log.id) },
+                            onDelete = { deleteTarget = entry }
+                        )
+                    }
                 }
             }
         }

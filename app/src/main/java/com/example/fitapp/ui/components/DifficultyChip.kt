@@ -2,6 +2,7 @@ package com.example.fitapp.ui.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -17,14 +18,15 @@ import com.example.fitapp.data.local.entity.Difficulty
 @Composable
 fun DifficultyChip(difficulty: Difficulty, modifier: Modifier = Modifier) {
     val (bg, fg) = when (difficulty) {
-        Difficulty.BEGINNER -> Color(0xFFE8F5E9) to Color(0xFF2E7D32)
-        Difficulty.INTERMEDIATE -> Color(0xFFFFF8E1) to Color(0xFFEF6C00)
-        Difficulty.ADVANCED -> Color(0xFFFFEBEE) to Color(0xFFC62828)
+        Difficulty.BEGINNER -> Color(0xFF12352E) to Color(0xFF35D8B1)
+        Difficulty.INTERMEDIATE -> Color(0xFF332818) to Color(0xFFF4B63F)
+        Difficulty.ADVANCED -> Color(0xFF331816) to Color(0xFFFF6A57)
     }
     Surface(
         color = bg,
         contentColor = fg,
         shape = RoundedCornerShape(50),
+        border = BorderStroke(1.dp, fg.copy(alpha = 0.35f)),
         modifier = modifier
     ) {
         Text(

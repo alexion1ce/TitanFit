@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.4.10 - 2026-07-06
+
+- Raised the custom bottom navigation above Android system buttons.
+- Restored working progress actions: period filters, "show all", workout details, and progress reset.
+- Fixed exercise selection returning to a new workout without selected exercises.
+
+## 0.4.9 - 2026-07-06
+
+- Fixed custom workout creation flow after exercise selection and save.
+- Restored a stable "My workouts" destination in bottom navigation.
+- Made custom workout saving transactional and improved journal loading state.
+
+## 0.4.8 - 2026-07-06
+
+- Unified the app around one dark fitness design across shared theme, navigation, catalog, progress, chips, and Material-based screens.
+- Removed the light/dark theme switch so screens no longer jump between different visual systems.
+- Fixed workout creation flow so selected exercises are consumed once, saved workouts return to "My workouts", and the journal shows a loading state before empty results.
+
+## 0.4.7 - 2026-07-06
+
+- Updated program details to the new dark program design and fixed the program start action.
+
+## 0.4.6 - 2026-07-06
+
+- Updated the app visual style with light/dark theme switching and saved theme choice.
+- Reworked bottom navigation plus catalog, programs, and progress screens for a cleaner mobile UI.
+- Expanded workout analytics with recent session summaries and additional progress data.
+
 ## 0.4.5 - 2026-07-01
 
 - Corrected several exercise illustrations after checking movement mechanics: machine chest press, machine row, reverse pec deck, straight-arm pulldown, dumbbell fly, triceps pushdown, and T-bar row.

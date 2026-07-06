@@ -30,6 +30,9 @@ interface WorkoutLogDao {
     @Query("DELETE FROM workout_logs WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("DELETE FROM workout_logs")
+    suspend fun deleteAll()
+
     @Query("SELECT COUNT(*) FROM workout_logs")
     suspend fun count(): Int
 }

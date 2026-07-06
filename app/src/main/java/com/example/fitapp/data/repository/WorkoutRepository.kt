@@ -1,5 +1,7 @@
 package com.example.fitapp.data.repository
 
+import androidx.room.withTransaction
+import com.example.fitapp.data.local.AppDatabase
 import com.example.fitapp.data.local.WorkoutWithExercises
 import com.example.fitapp.data.local.dao.WorkoutDao
 import com.example.fitapp.data.local.dao.WorkoutExerciseDao
@@ -18,9 +20,12 @@ import javax.inject.Singleton
 data class WorkoutExerciseItem(
     val workoutExerciseId: Long,
     val exerciseId: Long,
+    val exerciseCode: String = "",
     val exerciseName: String,
     val muscleName: String,
     val muscleEmoji: String,
+    val primaryMuscleCode: String = "",
+    val secondaryMuscleCode: String? = null,
     val order: Int,
     val sets: Int,
     val reps: String,
@@ -37,6 +42,7 @@ data class WorkoutDetail(
 
 @Singleton
 class WorkoutRepository @Inject constructor(
+    private val db: AppDatabase,
     private val workoutDao: WorkoutDao,
     private val workoutExerciseDao: WorkoutExerciseDao,
     private val exerciseRepository: ExerciseRepository,
@@ -70,9 +76,12 @@ class WorkoutRepository @Inject constructor(
                 WorkoutExerciseItem(
                     workoutExerciseId = we.id,
                     exerciseId = we.exerciseId,
+                    exerciseCode = ex?.code.orEmpty(),
                     exerciseName = ex?.name ?: "Удалённое упражнение",
                     muscleName = ex?.primaryMuscleCode?.let { muscleNames[it] } ?: "—",
                     muscleEmoji = ex?.primaryMuscleCode?.let { muscleEmojis[it] } ?: "🏋️",
+                    primaryMuscleCode = ex?.primaryMuscleCode.orEmpty(),
+                    secondaryMuscleCode = ex?.secondaryMuscleCode,
                     order = we.order,
                     sets = we.sets,
                     reps = we.reps,
@@ -108,6 +117,22 @@ class WorkoutRepository @Inject constructor(
             )
         }
         workoutExerciseDao.replaceWorkoutExercises(workoutId, entities)
+    }
+
+    suspend fun saveWorkoutWithExercises(
+        workoutId: Long?,
+        name: String,
+        notes: String?,
+        items: List<WorkoutExerciseItem>
+    ): Long = db.withTransaction {
+        val id = if (workoutId == null) {
+            createWorkout(name, notes)
+        } else {
+            renameWorkout(workoutId, name, notes)
+            workoutId
+        }
+        saveExercises(id, items)
+        id
     }
 
     suspend fun renameWorkout(id: Long, name: String, notes: String?) {

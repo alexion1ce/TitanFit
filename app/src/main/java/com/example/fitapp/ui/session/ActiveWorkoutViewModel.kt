@@ -177,8 +177,12 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun finishWorkout() {
         viewModelScope.launch {
             RestTimerNotifications.cancelFinishedNotification(appContext)
-            workoutLogRepository.finishWorkout(_uiState.value.logId)
-            _uiState.value = _uiState.value.copy(isFinished = true)
+            val saved = workoutLogRepository.finishWorkout(_uiState.value.logId)
+            _uiState.value = if (saved) {
+                _uiState.value.copy(isFinished = true)
+            } else {
+                _uiState.value.copy(errorMessage = "Не удалось сохранить тренировку в журнал")
+            }
         }
     }
 

@@ -18,26 +18,23 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,8 +42,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.local.entity.Difficulty
 import com.example.fitapp.ui.components.DifficultyChip
 import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
+import com.example.fitapp.ui.components.FitAccentRed
+import com.example.fitapp.ui.components.FitCardShape
+import com.example.fitapp.ui.components.FitChipShape
+import com.example.fitapp.ui.components.FitHybridScreen
+import com.example.fitapp.ui.components.FitInk
+import com.example.fitapp.ui.components.FitMuted
+import com.example.fitapp.ui.components.FitScreenHeader
+import com.example.fitapp.ui.components.FitSectionTitle
+import com.example.fitapp.ui.components.FitSurfaceCard
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     onExerciseClick: (Long) -> Unit,
@@ -54,116 +59,118 @@ fun CatalogScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Каталог упражнений", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+    FitHybridScreen(headerHeight = 178.dp) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, top = 42.dp, end = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Поиск
-            OutlinedTextField(
-                value = state.searchQuery,
-                onValueChange = viewModel::onSearchChanged,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Поиск упражнения…") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true
-            )
-
-            // Чипы фильтра по группам мышц
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(state.muscleGroups, key = { it.code }) { muscle ->
-                    FilterChip(
-                        selected = state.selectedMuscle == muscle.code,
-                        onClick = {
-                            val newCode = if (state.selectedMuscle == muscle.code) null else muscle.code
-                            viewModel.onMuscleSelected(newCode)
-                        },
-                        label = { Text("${muscle.emoji} ${muscle.name}") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-                    )
-                }
+            item {
+                FitScreenHeader(
+                    title = "Каталог",
+                    subtitle = "Быстрый выбор упражнения для тренировки"
+                )
             }
-
-            Spacer(Modifier.height(8.dp))
-
-            // Чипы фильтра по оборудованию
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(state.equipment, key = { it.code }) { equipment ->
-                    FilterChip(
-                        selected = state.selectedEquipment == equipment.code,
-                        onClick = {
-                            val newCode =
-                                if (state.selectedEquipment == equipment.code) null else equipment.code
-                            viewModel.onEquipmentSelected(newCode)
-                        },
-                        label = { Text(equipment.name) }
-                    )
-                }
+            item {
+                CatalogFilters(
+                    state = state,
+                    onSearchChanged = viewModel::onSearchChanged,
+                    onMuscleSelected = viewModel::onMuscleSelected,
+                    onEquipmentSelected = viewModel::onEquipmentSelected
+                )
             }
-
-            Spacer(Modifier.height(4.dp))
 
             when {
-                state.isLoading -> LoadingState()
-                state.errorMessage != null -> ErrorState(state.errorMessage)
-                state.exercises.isEmpty() -> EmptyState()
-                else -> ExerciseList(state, onExerciseClick)
+                state.isLoading -> item { LoadingState() }
+                state.errorMessage != null -> item { ErrorState(state.errorMessage) }
+                state.exercises.isEmpty() -> item { EmptyState() }
+                else -> {
+                    item {
+                        FitSectionTitle(
+                            title = "Упражнения",
+                            action = "${state.exercises.size}"
+                        )
+                    }
+                    items(state.exercises, key = { it.exercise.id }) { card ->
+                        ExerciseCardItem(card = card, onClick = { onExerciseClick(card.exercise.id) })
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ExerciseList(state: CatalogUiState, onExerciseClick: (Long) -> Unit) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(state.exercises, key = { it.exercise.id }) { card ->
-            ExerciseCardItem(card = card, onClick = { onExerciseClick(card.exercise.id) })
+private fun CatalogFilters(
+    state: CatalogUiState,
+    onSearchChanged: (String) -> Unit,
+    onMuscleSelected: (String?) -> Unit,
+    onEquipmentSelected: (String?) -> Unit
+) {
+    FitSurfaceCard(contentPadding = PaddingValues(12.dp)) {
+        OutlinedTextField(
+            value = state.searchQuery,
+            onValueChange = onSearchChanged,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Поиск упражнения") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true,
+            shape = FitCardShape
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(state.muscleGroups, key = { it.code }) { muscle ->
+                val selected = state.selectedMuscle == muscle.code
+                FilterChip(
+                    selected = selected,
+                    onClick = {
+                        val newCode = if (selected) null else muscle.code
+                        onMuscleSelected(newCode)
+                    },
+                    label = { Text("${muscle.emoji} ${muscle.name}") },
+                    shape = FitChipShape,
+                    colors = catalogChipColors()
+                )
+            }
+        }
+
+        Spacer(Modifier.height(6.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(state.equipment, key = { it.code }) { equipment ->
+                val selected = state.selectedEquipment == equipment.code
+                FilterChip(
+                    selected = selected,
+                    onClick = {
+                        val newCode = if (selected) null else equipment.code
+                        onEquipmentSelected(newCode)
+                    },
+                    label = { Text(equipment.name) },
+                    shape = FitChipShape,
+                    colors = catalogChipColors()
+                )
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExerciseCardItem(card: ExerciseCard, onClick: () -> Unit) {
-    Surface(
+    FitSurfaceCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(FitCardShape)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 1.dp
+        contentPadding = PaddingValues(12.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(78.dp)
                     .clip(RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
@@ -180,6 +187,7 @@ private fun ExerciseCardItem(card: ExerciseCard, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = card.exercise.name,
+                    color = FitInk,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
@@ -189,7 +197,7 @@ private fun ExerciseCardItem(card: ExerciseCard, onClick: () -> Unit) {
                 Text(
                     text = "${card.muscleGroupName} · ${card.equipmentName}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = FitMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -198,9 +206,9 @@ private fun ExerciseCardItem(card: ExerciseCard, onClick: () -> Unit) {
             }
 
             Icon(
-                imageVector = Icons.Outlined.FitnessCenter,
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline
+                tint = FitMuted
             )
         }
     }
@@ -208,38 +216,68 @@ private fun ExerciseCardItem(card: ExerciseCard, onClick: () -> Unit) {
 
 @Composable
 private fun LoadingState() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+    FitSurfaceCard {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = FitAccentRed)
+        }
     }
 }
 
 @Composable
 private fun ErrorState(message: String?) {
-    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+    FitSurfaceCard {
         Text(
-            text = message ?: "Произошла ошибка",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.error,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            text = "Не удалось загрузить каталог",
+            color = FitInk,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = message ?: "Попробуйте открыть экран позже",
+            color = FitMuted,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
 
 @Composable
 private fun EmptyState() {
-    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("🏋️", style = MaterialTheme.typography.displayMedium)
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "Ничего не найдено",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = "Попробуйте изменить фильтры",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+    FitSurfaceCard {
+        Text(
+            text = "Ничего не найдено",
+            color = FitInk,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "Попробуйте изменить поиск или фильтры",
+            color = FitMuted,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
+
+@Composable
+private fun catalogChipColors() = FilterChipDefaults.filterChipColors(
+    selectedContainerColor = FitAccentRed,
+    selectedLabelColor = Color.White,
+    containerColor = Color(0xFF171B21),
+    labelColor = FitInk,
+    disabledContainerColor = Color(0xFF171B21),
+    disabledLabelColor = FitMuted
+)

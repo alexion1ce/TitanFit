@@ -87,13 +87,6 @@ class WorkoutEditorViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(exercises = reordered)
     }
 
-    fun addPickedExerciseIds(ids: LongArray?) {
-        if (ids == null || ids.isEmpty()) return
-        viewModelScope.launch {
-            addExerciseIds(ids.toSet())
-        }
-    }
-
     private fun loadWorkout(id: Long) {
         viewModelScope.launch {
             try {
@@ -157,6 +150,19 @@ class WorkoutEditorViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(exercises = reordered)
     }
 
+    fun addPickedExerciseIds(ids: Set<Long>) {
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                addExerciseIds(ids)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Ошибка добавления упражнений: ${e.message}"
+                )
+            }
+        }
+    }
+
     fun save() {
         val state = _uiState.value
         if (state.workoutName.isBlank()) {
@@ -171,14 +177,12 @@ class WorkoutEditorViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = state.copy(isSaving = true, errorMessage = null)
             try {
-                val id = if (state.isNewWorkout) {
-                    workoutRepository.createWorkout(state.workoutName, state.workoutNotes)
-                } else {
-                    state.workoutId!!.also { wid ->
-                        workoutRepository.renameWorkout(wid, state.workoutName, state.workoutNotes)
-                    }
-                }
-                workoutRepository.saveExercises(id, state.exercises)
+                val id = workoutRepository.saveWorkoutWithExercises(
+                    workoutId = state.workoutId,
+                    name = state.workoutName,
+                    notes = state.workoutNotes,
+                    items = state.exercises
+                )
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
                     saveSuccess = true,

@@ -1,6 +1,7 @@
 package com.example.fitapp.ui.programs
 
 import com.example.fitapp.data.local.entity.Workout
+import com.example.fitapp.data.repository.WorkoutExerciseItem
 
 /**
  * Карточка готовой программы с краткой сводкой.
@@ -8,7 +9,8 @@ import com.example.fitapp.data.local.entity.Workout
 data class ProgramCard(
     val workout: Workout,
     val exerciseCount: Int,
-    val totalSets: Int
+    val totalSets: Int,
+    val exercises: List<WorkoutExerciseItem> = emptyList()
 )
 
 data class ProgramsUiState(

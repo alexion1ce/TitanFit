@@ -28,7 +28,8 @@ class ProgramsViewModel @Inject constructor(
                     ProgramCard(
                         workout = w,
                         exerciseCount = detail?.exercises?.size ?: 0,
-                        totalSets = detail?.exercises?.sumOf { it.sets } ?: 0
+                        totalSets = detail?.exercises?.sumOf { it.sets } ?: 0,
+                        exercises = detail?.exercises.orEmpty()
                     )
                 }
                 ProgramsUiState(
