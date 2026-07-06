@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.12 - 2026-07-06
+
+- Reworked the "My workouts" screen with aligned premium workout cards.
+- Added a summary strip and full-width create workout action.
+- Improved Russian labels and action layout for edit, delete, and start workout controls.
+
 ## 0.4.11 - 2026-07-06
 
 - Fixed selected exercises disappearing when returning to the new workout editor.
