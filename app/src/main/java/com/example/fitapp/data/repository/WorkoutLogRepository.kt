@@ -111,6 +111,12 @@ class WorkoutLogRepository @Inject constructor(
     /** Завершает тренировку: фиксирует время окончания и длительность. */
     suspend fun finishWorkout(logId: Long): Boolean {
         val log = workoutLogDao.getById(logId) ?: return false
+        val sets = setLogDao.getByLog(logId)
+        if (sets.isNotEmpty() && sets.none { it.done }) {
+            sets.forEach { set ->
+                setLogDao.update(set.copy(done = true))
+            }
+        }
         val now = System.currentTimeMillis()
         val durationMin = ((now - log.startedAt) / 60_000L).toInt()
         workoutLogDao.update(

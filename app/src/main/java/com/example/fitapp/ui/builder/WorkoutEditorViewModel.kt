@@ -11,8 +11,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,15 +41,6 @@ class WorkoutEditorViewModel @Inject constructor(
         // Слушаем результат пикера: ключ "picked_exercise_ids" устанавливается
         // в NavGraph через navController.previousBackStackEntry?.savedStateHandle.
         // StateFlow сам фильтрует одинаковые значения, поэтому distinctUntilChanged не нужен.
-        savedStateHandle
-            .getStateFlow<LongArray?>(KEY_PICKED_IDS, null)
-            .onEach { ids ->
-                if (ids != null && ids.isNotEmpty()) {
-                    addExerciseIds(ids.toSet())
-                    savedStateHandle[KEY_PICKED_IDS] = null
-                }
-            }
-            .launchIn(viewModelScope)
     }
 
     /**

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.11 - 2026-07-06
+
+- Fixed selected exercises disappearing when returning to the new workout editor.
+- Opened "My workouts" with fresh data after saving a custom workout.
+- Refreshed progress data when opening the progress tab.
+- Counted all sets as completed on finish when no individual sets were marked done.
+
 ## 0.4.10 - 2026-07-06
 
 - Raised the custom bottom navigation above Android system buttons.

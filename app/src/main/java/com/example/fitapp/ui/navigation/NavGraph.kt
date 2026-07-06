@@ -5,9 +5,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -34,15 +35,12 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         startDestination = Destinations.CATALOG,
         modifier = modifier
     ) {
-
-        // ===== Каталог упражнений =====
         composable(Destinations.CATALOG) {
             CatalogScreen(
                 onExerciseClick = { id -> navController.navigate(Destinations.exerciseDetail(id)) }
             )
         }
 
-        // ===== Детали упражнения =====
         composable(
             route = Destinations.EXERCISE_DETAIL,
             arguments = listOf(navArgument("exerciseId") { type = NavType.LongType })
@@ -50,7 +48,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             ExerciseDetailScreen(onBackClick = { navController.popBackStack() })
         }
 
-        // ===== Мои тренировки =====
         composable(Destinations.MY_WORKOUTS) {
             MyWorkoutsScreen(
                 onCreateWorkout = {
@@ -65,51 +62,44 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             )
         }
 
-        // ===== Редактор тренировки =====
         composable(
             route = Destinations.WORKOUT_EDITOR,
             arguments = listOf(navArgument("workoutId") { type = NavType.LongType })
-        ) {
+        ) { backStackEntry ->
+            val pickedExerciseIds by backStackEntry.savedStateHandle
+                .getStateFlow<LongArray?>(WorkoutEditorViewModel.KEY_PICKED_IDS, null)
+                .collectAsStateWithLifecycle()
+
             WorkoutEditorScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = {
                     navController.navigate(Destinations.MY_WORKOUTS) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
+                        popUpTo(navController.graph.findStartDestination().id)
                         launchSingleTop = true
-                        restoreState = true
                     }
                 },
                 onAddExercise = {
                     navController.navigate(Destinations.EXERCISE_PICKER)
+                },
+                pickedExerciseIds = pickedExerciseIds,
+                onPickedExerciseIdsConsumed = {
+                    backStackEntry.savedStateHandle[WorkoutEditorViewModel.KEY_PICKED_IDS] = null
                 }
             )
         }
 
-        // ===== Выбор упражнений (пикер) =====
         composable(Destinations.EXERCISE_PICKER) {
-            val editorBackStackEntry = navController.previousBackStackEntry
-            val editorViewModel: WorkoutEditorViewModel? = editorBackStackEntry?.let {
-                hiltViewModel(it)
-            }
             ExercisePickerScreen(
                 onBack = { navController.popBackStack() },
                 onConfirmSelection = { ids ->
-                    if (editorViewModel != null) {
-                        editorViewModel.addPickedExerciseIds(ids)
-                    } else {
-                    // Передаём результат в SavedStateHandle редактора (предыдущий экран).
-                    editorBackStackEntry
+                    navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set(WorkoutEditorViewModel.KEY_PICKED_IDS, ids.toLongArray())
-                    }
                     navController.popBackStack()
                 }
             )
         }
 
-        // ===== Готовые программы =====
         composable(Destinations.PROGRAMS) {
             ProgramsScreen(
                 onProgramClick = { id -> navController.navigate(Destinations.programDetail(id)) },
@@ -118,7 +108,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             )
         }
 
-        // ===== Детали программы =====
         composable(
             route = Destinations.PROGRAM_DETAIL,
             arguments = listOf(navArgument("workoutId") { type = NavType.LongType })
@@ -130,7 +119,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             )
         }
 
-        // ===== Активная тренировка =====
         composable(
             route = Destinations.ACTIVE_WORKOUT,
             arguments = listOf(navArgument("workoutId") { type = NavType.LongType })
@@ -139,24 +127,19 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 onBack = { navController.popBackStack() },
                 onFinish = {
                     navController.navigate(Destinations.JOURNAL) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
+                        popUpTo(navController.graph.findStartDestination().id)
                         launchSingleTop = true
-                        restoreState = true
                     }
                 }
             )
         }
 
-        // ===== Журнал тренировок =====
         composable(Destinations.JOURNAL) {
             JournalScreen(
                 onEntryClick = { logId -> navController.navigate(Destinations.logDetail(logId)) }
             )
         }
 
-        // ===== Детали выполненной тренировки =====
         composable(
             route = Destinations.LOG_DETAIL,
             arguments = listOf(navArgument("logId") { type = NavType.LongType })
@@ -164,7 +147,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             LogDetailScreen(onBack = { navController.popBackStack() })
         }
 
-        // ===== Прогресс =====
         composable(Destinations.PROGRESS) {
             ProgressScreen(
                 onEntryClick = { logId -> navController.navigate(Destinations.logDetail(logId)) }
@@ -177,7 +159,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
 private fun PlaceholderRoute(title: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            "«$title» — раздел в разработке",
+            "\"$title\" - раздел в разработке",
             style = MaterialTheme.typography.titleMedium
         )
     }

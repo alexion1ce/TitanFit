@@ -59,9 +59,19 @@ fun WorkoutEditorScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit,
     onAddExercise: () -> Unit,
+    pickedExerciseIds: LongArray? = null,
+    onPickedExerciseIdsConsumed: () -> Unit = {},
     viewModel: WorkoutEditorViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(pickedExerciseIds) {
+        val ids = pickedExerciseIds
+        if (ids != null && ids.isNotEmpty()) {
+            viewModel.addPickedExerciseIds(ids.toSet())
+            onPickedExerciseIdsConsumed()
+        }
+    }
 
     // При успешном сохранении — возвращаемся назад
     LaunchedEffect(state.saveSuccess) {

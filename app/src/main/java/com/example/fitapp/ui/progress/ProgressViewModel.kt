@@ -22,6 +22,10 @@ class ProgressViewModel @Inject constructor(
         load()
     }
 
+    fun refresh() {
+        load()
+    }
+
     private fun load() {
         viewModelScope.launch {
             val current = _uiState.value
