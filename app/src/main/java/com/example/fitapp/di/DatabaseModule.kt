@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.example.fitapp.data.local.AppDatabase
 import com.example.fitapp.data.local.DatabaseMigrations
 import com.example.fitapp.data.local.dao.EquipmentDao
+import com.example.fitapp.data.local.dao.ExerciseCatalogMetaDao
 import com.example.fitapp.data.local.dao.ExerciseDao
 import com.example.fitapp.data.local.dao.MuscleGroupDao
 import com.example.fitapp.data.local.dao.SetLogDao
@@ -39,6 +40,9 @@ object DatabaseModule {
 
     @Provides
     fun provideExerciseDao(db: AppDatabase): ExerciseDao = db.exerciseDao()
+
+    @Provides
+    fun provideExerciseCatalogMetaDao(db: AppDatabase): ExerciseCatalogMetaDao = db.exerciseCatalogMetaDao()
 
     @Provides
     fun provideWorkoutDao(db: AppDatabase): WorkoutDao = db.workoutDao()

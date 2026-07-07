@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitapp.data.local.entity.Difficulty
 import com.example.fitapp.data.repository.EquipmentRepository
+import com.example.fitapp.data.repository.ExerciseCatalogRepository
 import com.example.fitapp.data.repository.ExerciseRepository
 import com.example.fitapp.data.repository.MuscleGroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +20,7 @@ class ExerciseDetailViewModel @Inject constructor(
     private val exerciseRepository: ExerciseRepository,
     private val muscleGroupRepository: MuscleGroupRepository,
     private val equipmentRepository: EquipmentRepository,
+    private val catalogRepository: ExerciseCatalogRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -43,6 +45,7 @@ class ExerciseDetailViewModel @Inject constructor(
                     )
                     return@launch
                 }
+                catalogRepository.markUsed(exercise.id)
 
                 val muscles = muscleGroupRepository.getAll().associateBy { it.code }
                 val equipment = equipmentRepository.getAll().associateBy { it.code }

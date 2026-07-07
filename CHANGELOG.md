@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.13 - 2026-07-07
+
+- Reworked the exercise catalog around recommendations, favorites, recent exercises, and quick-add actions.
+- Added catalog filtering by difficulty and improved search with common synonyms for muscles, equipment, and movement names.
+- Added persistent catalog metadata with a Room migration so favorites and recent exercises survive app restarts.
+- Added quick creation of a new workout directly from an exercise card.
+
 ## 0.4.12 - 2026-07-06
 
 - Reworked the "My workouts" screen with aligned premium workout cards.

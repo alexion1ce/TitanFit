@@ -10,7 +10,7 @@ object Destinations {
     const val PROGRESS = "progress"
     const val EXERCISE_DETAIL = "exercise/{exerciseId}"
     const val MY_WORKOUTS = "my_workouts"
-    const val WORKOUT_EDITOR = "workout_editor/{workoutId}"
+    const val WORKOUT_EDITOR = "workout_editor/{workoutId}?exerciseId={exerciseId}"
     const val EXERCISE_PICKER = "exercise_picker"
     const val PROGRAM_DETAIL = "program_detail/{workoutId}"
     const val ACTIVE_WORKOUT = "active_workout/{workoutId}"
@@ -19,7 +19,12 @@ object Destinations {
     fun exerciseDetail(id: Long) = "exercise/$id"
 
     /** workoutId = -1 для новой тренировки. */
-    fun workoutEditor(workoutId: Long) = "workout_editor/$workoutId"
+    fun workoutEditor(workoutId: Long, exerciseId: Long? = null): String =
+        if (exerciseId == null) {
+            "workout_editor/$workoutId"
+        } else {
+            "workout_editor/$workoutId?exerciseId=$exerciseId"
+        }
 
     fun programDetail(workoutId: Long) = "program_detail/$workoutId"
 

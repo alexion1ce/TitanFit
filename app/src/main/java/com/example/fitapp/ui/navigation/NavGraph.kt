@@ -37,7 +37,8 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     ) {
         composable(Destinations.CATALOG) {
             CatalogScreen(
-                onExerciseClick = { id -> navController.navigate(Destinations.exerciseDetail(id)) }
+                onExerciseClick = { id -> navController.navigate(Destinations.exerciseDetail(id)) },
+                onQuickAddExercise = { id -> navController.navigate(Destinations.workoutEditor(-1L, id)) }
             )
         }
 
@@ -64,11 +65,18 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
 
         composable(
             route = Destinations.WORKOUT_EDITOR,
-            arguments = listOf(navArgument("workoutId") { type = NavType.LongType })
+            arguments = listOf(
+                navArgument("workoutId") { type = NavType.LongType },
+                navArgument("exerciseId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
         ) { backStackEntry ->
             val pickedExerciseIds by backStackEntry.savedStateHandle
                 .getStateFlow<LongArray?>(WorkoutEditorViewModel.KEY_PICKED_IDS, null)
                 .collectAsStateWithLifecycle()
+            val initialExerciseId = backStackEntry.arguments?.getLong("exerciseId")?.takeIf { it > 0L }
 
             WorkoutEditorScreen(
                 onBack = { navController.popBackStack() },
@@ -82,6 +90,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                     navController.navigate(Destinations.EXERCISE_PICKER)
                 },
                 pickedExerciseIds = pickedExerciseIds,
+                initialExerciseId = initialExerciseId,
                 onPickedExerciseIdsConsumed = {
                     backStackEntry.savedStateHandle[WorkoutEditorViewModel.KEY_PICKED_IDS] = null
                 }

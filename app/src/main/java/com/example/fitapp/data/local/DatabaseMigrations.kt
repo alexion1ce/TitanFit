@@ -74,5 +74,24 @@ object DatabaseMigrations {
         }
     }
 
-    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `exercise_catalog_meta` (
+                    `exerciseId` INTEGER NOT NULL,
+                    `isFavorite` INTEGER NOT NULL,
+                    `lastUsedAt` INTEGER,
+                    `quickAddCount` INTEGER NOT NULL,
+                    PRIMARY KEY(`exerciseId`),
+                    FOREIGN KEY(`exerciseId`) REFERENCES `exercises`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_exercise_catalog_meta_isFavorite` ON `exercise_catalog_meta` (`isFavorite`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_exercise_catalog_meta_lastUsedAt` ON `exercise_catalog_meta` (`lastUsedAt`)")
+        }
+    }
+
+    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }

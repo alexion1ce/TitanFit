@@ -60,6 +60,7 @@ fun WorkoutEditorScreen(
     onSaved: () -> Unit,
     onAddExercise: () -> Unit,
     pickedExerciseIds: LongArray? = null,
+    initialExerciseId: Long? = null,
     onPickedExerciseIdsConsumed: () -> Unit = {},
     viewModel: WorkoutEditorViewModel = hiltViewModel()
 ) {
@@ -70,6 +71,12 @@ fun WorkoutEditorScreen(
         if (ids != null && ids.isNotEmpty()) {
             viewModel.addPickedExerciseIds(ids.toSet())
             onPickedExerciseIdsConsumed()
+        }
+    }
+
+    LaunchedEffect(initialExerciseId) {
+        initialExerciseId?.takeIf { it > 0L }?.let { id ->
+            viewModel.addPickedExerciseIds(setOf(id))
         }
     }
 
