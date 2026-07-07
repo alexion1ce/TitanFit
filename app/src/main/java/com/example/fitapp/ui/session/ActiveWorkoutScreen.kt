@@ -146,7 +146,8 @@ fun ActiveWorkoutScreen(
                             group = group,
                             onToggleSet = viewModel::toggleSetDone,
                             onWeightChange = viewModel::onWeightChanged,
-                            onRepsChange = viewModel::onRepsChanged
+                            onRepsChange = viewModel::onRepsChanged,
+                            onAddSets = viewModel::addSets
                         )
                     }
 
@@ -254,9 +255,11 @@ private fun ExerciseGroupCard(
     group: ExerciseSetGroup,
     onToggleSet: (SetLog) -> Unit,
     onWeightChange: (SetLog, Double) -> Unit,
-    onRepsChange: (SetLog, Int) -> Unit
+    onRepsChange: (SetLog, Int) -> Unit,
+    onAddSets: (Long, Int) -> Unit
 ) {
     val completedSets = group.sets.count { it.done }
+    var showAddSetsDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -294,8 +297,95 @@ private fun ExerciseGroupCard(
                 )
                 Spacer(Modifier.height(8.dp))
             }
+
+            OutlinedButton(
+                onClick = { showAddSetsDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Добавить подходы")
+            }
         }
     }
+
+    if (showAddSetsDialog) {
+        AddSetsDialog(
+            exerciseName = group.exerciseName,
+            onDismiss = { showAddSetsDialog = false },
+            onConfirm = { count ->
+                onAddSets(group.exerciseId, count)
+                showAddSetsDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun AddSetsDialog(
+    exerciseName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var count by remember { mutableStateOf(1) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Добавить подходы") },
+        text = {
+            Column {
+                Text(
+                    text = exerciseName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    text = "Сколько дополнительных подходов добавить?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = { count = (count - 1).coerceAtLeast(1) },
+                        enabled = count > 1,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Remove, contentDescription = "Уменьшить")
+                    }
+                    Text(
+                        text = count.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    OutlinedButton(
+                        onClick = { count = (count + 1).coerceAtMost(20) },
+                        enabled = count < 20,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Увеличить")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(count) }) {
+                Text("Добавить: $count")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
+    )
 }
 
 @Composable

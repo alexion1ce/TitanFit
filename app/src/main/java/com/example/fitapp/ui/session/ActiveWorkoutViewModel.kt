@@ -93,12 +93,13 @@ class ActiveWorkoutViewModel @Inject constructor(
             )
         }
 
-        _uiState.value = ActiveWorkoutUiState(
+        _uiState.value = _uiState.value.copy(
             isLoading = false,
             logId = logId,
             workoutName = log.workoutName,
             startedAt = log.startedAt,
-            groups = groups
+            groups = groups,
+            errorMessage = null
         )
     }
 
@@ -131,6 +132,20 @@ class ActiveWorkoutViewModel @Inject constructor(
             val updated = setLog.copy(reps = reps)
             workoutLogRepository.updateSet(updated)
             updateSetInState(updated)
+        }
+    }
+
+    fun addSets(exerciseId: Long, count: Int) {
+        viewModelScope.launch {
+            try {
+                val logId = _uiState.value.logId
+                workoutLogRepository.addSets(logId, exerciseId, count)
+                loadSession(logId)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Не удалось добавить подходы: ${e.message}"
+                )
+            }
         }
     }
 

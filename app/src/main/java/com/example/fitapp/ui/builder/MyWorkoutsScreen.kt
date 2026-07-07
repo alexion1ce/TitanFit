@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.local.entity.Workout
+import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
 import com.example.fitapp.ui.components.FitAccentRed
 import com.example.fitapp.ui.components.FitAccentRedDark
 import com.example.fitapp.ui.components.FitCardBorder
@@ -103,24 +104,24 @@ fun MyWorkoutsScreen(
         ) {
             item {
                 Header(
-                    workoutCount = state.workouts.size,
-                    latestName = state.workouts.firstOrNull()?.name,
+                    workoutCount = state.workoutCards.size,
+                    latestName = state.workoutCards.firstOrNull()?.workout?.name,
                     onCreateWorkout = onCreateWorkout
                 )
             }
 
-            if (state.workouts.isEmpty()) {
+            if (state.workoutCards.isEmpty()) {
                 item {
                     EmptyWorkouts(onCreateWorkout = onCreateWorkout)
                 }
             } else {
-                itemsIndexed(state.workouts, key = { _, workout -> workout.id }) { index, workout ->
+                itemsIndexed(state.workoutCards, key = { _, card -> card.workout.id }) { index, card ->
                     WorkoutCard(
-                        workout = workout,
+                        card = card,
                         isFeatured = index == 0,
-                        onStart = { onStartWorkout(workout.id) },
-                        onEdit = { onEditWorkout(workout.id) },
-                        onDelete = { deleteTarget = workout }
+                        onStart = { onStartWorkout(card.workout.id) },
+                        onEdit = { onEditWorkout(card.workout.id) },
+                        onDelete = { deleteTarget = card.workout }
                     )
                 }
             }
@@ -212,12 +213,14 @@ private fun Header(
 
 @Composable
 private fun WorkoutCard(
-    workout: Workout,
+    card: MyWorkoutCardUi,
     isFeatured: Boolean,
     onStart: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val workout = card.workout
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(30.dp),
@@ -254,12 +257,21 @@ private fun WorkoutCard(
                         shape = RoundedCornerShape(22.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.EditNote,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
+                            if (card.exerciseCode.isNotBlank() && card.primaryMuscleCode.isNotBlank()) {
+                                ExerciseArtworkThumbnail(
+                                    exerciseCode = card.exerciseCode,
+                                    primaryMuscleCode = card.primaryMuscleCode,
+                                    secondaryMuscleCode = card.secondaryMuscleCode,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Outlined.EditNote,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
                         }
                     }
 
@@ -275,7 +287,7 @@ private fun WorkoutCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = workout.notes?.takeIf { it.isNotBlank() } ?: "Силовой день",
+                            text = workout.notes?.takeIf { it.isNotBlank() } ?: "${card.muscleEmoji} ${card.muscleSummary}",
                             color = FitMuted,
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
@@ -308,9 +320,9 @@ private fun WorkoutCard(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    InfoChip(text = if (isFeatured) "Основная" else "План")
+                    InfoChip(text = "${card.exerciseCount} упр.")
+                    InfoChip(text = card.muscleSummary)
                     InfoChip(text = if (workout.notes.isNullOrBlank()) "Без заметок" else "С заметками")
-                    InfoChip(text = "Своя")
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -342,7 +354,8 @@ private fun InfoChip(text: String) {
             color = FitMuted,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
-            maxLines = 1
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

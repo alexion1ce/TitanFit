@@ -1,5 +1,14 @@
 # Project Instructions
 
+## General Workflow Rules
+
+- Use sub-agents only when they can materially improve the result or speed up
+  the work. Do not spawn them for small tasks where the main agent can finish
+  faster and with less coordination.
+- When the user asks to build an APK, also use Git for the release: bump the app
+  version, update `CHANGELOG.md`, build the APK, and commit the relevant changes
+  so it is clear which version was built and what was fixed.
+
 ## Exercise Artwork Generation Standard
 
 Use this as the shared prompt template for all generated exercise PNG assets in

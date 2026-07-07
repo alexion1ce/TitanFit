@@ -108,6 +108,26 @@ class WorkoutLogRepository @Inject constructor(
         setLogDao.update(setLog)
     }
 
+    suspend fun addSets(logId: Long, exerciseId: Long, count: Int) {
+        val safeCount = count.coerceIn(1, 20)
+        val exerciseSets = setLogDao.getByLog(logId)
+            .filter { it.exerciseId == exerciseId }
+            .sortedBy { it.setNumber }
+        val lastSet = exerciseSets.lastOrNull()
+        val nextSetNumber = (lastSet?.setNumber ?: 0) + 1
+        val newSets = List(safeCount) { index ->
+            SetLog(
+                logId = logId,
+                exerciseId = exerciseId,
+                setNumber = nextSetNumber + index,
+                weight = lastSet?.weight ?: 0.0,
+                reps = lastSet?.reps ?: 10,
+                done = false
+            )
+        }
+        setLogDao.insertAll(newSets)
+    }
+
     /** Завершает тренировку: фиксирует время окончания и длительность. */
     suspend fun finishWorkout(logId: Long): Boolean {
         val log = workoutLogDao.getById(logId) ?: return false

@@ -22,9 +22,33 @@ class MyWorkoutsViewModel @Inject constructor(
     val uiState: StateFlow<MyWorkoutsUiState> =
         workoutRepository.observeCustomWorkouts()
             .map { workouts ->
+                val cards = workouts.map { workout ->
+                    val detail = workoutRepository.getDetail(workout.id)
+                    val exercises = detail?.exercises.orEmpty()
+                    val firstExercise = exercises.firstOrNull()
+                    val muscleNames = exercises.map { it.muscleName }
+                        .filter { it.isNotBlank() && it != "—" }
+                        .distinct()
+                    val muscleSummary = when {
+                        muscleNames.isEmpty() -> "Без упражнений"
+                        muscleNames.size == 1 -> muscleNames.first()
+                        muscleNames.size == 2 -> muscleNames.joinToString(" + ")
+                        else -> "${muscleNames.take(2).joinToString(" + ")} +${muscleNames.size - 2}"
+                    }
+
+                    MyWorkoutCardUi(
+                        workout = workout,
+                        exerciseCount = exercises.size,
+                        exerciseCode = firstExercise?.exerciseCode.orEmpty(),
+                        primaryMuscleCode = firstExercise?.primaryMuscleCode.orEmpty(),
+                        secondaryMuscleCode = firstExercise?.secondaryMuscleCode,
+                        muscleEmoji = firstExercise?.muscleEmoji ?: "🏋️",
+                        muscleSummary = muscleSummary
+                    )
+                }
                 MyWorkoutsUiState(
                     isLoading = false,
-                    workouts = workouts,
+                    workoutCards = cards,
                     errorMessage = _errorMessage.value
                 )
             }

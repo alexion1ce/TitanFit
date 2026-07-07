@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.15 - 2026-07-07
+
+- Added the ability to add extra sets during an active workout for a specific exercise.
+- Updated "My workouts" cards to use exercise artwork and muscle summaries based on the selected workout exercises.
+- Added project workflow rules for using sub-agents only when useful and for committing every APK release.
+
 ## 0.4.14 - 2026-07-07
 
 - Changed catalog quick-add so it asks whether to create a new workout or add the exercise to an existing workout.
