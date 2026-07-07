@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -41,6 +43,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.local.entity.Difficulty
+import com.example.fitapp.data.local.entity.Workout
 import com.example.fitapp.ui.components.DifficultyChip
 import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
 import com.example.fitapp.ui.components.FitAccentRed
@@ -72,10 +78,11 @@ import com.example.fitapp.ui.components.FitSurfaceCard
 @Composable
 fun CatalogScreen(
     onExerciseClick: (Long) -> Unit,
-    onQuickAddExercise: (Long) -> Unit,
+    onQuickAddExercise: (Long, Long?) -> Unit,
     viewModel: CatalogViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var pendingQuickAdd by remember { mutableStateOf<ExerciseCard?>(null) }
 
     FitHybridScreen(headerHeight = 210.dp) {
         LazyColumn(
@@ -95,10 +102,7 @@ fun CatalogScreen(
                     RecommendedPanel(
                         state = state,
                         onExerciseClick = onExerciseClick,
-                        onQuickAdd = { id ->
-                            viewModel.onQuickAdd(id)
-                            onQuickAddExercise(id)
-                        }
+                        onQuickAdd = { pendingQuickAdd = it }
                     )
                 }
             }
@@ -125,10 +129,7 @@ fun CatalogScreen(
                         title = "Избранное",
                         exercises = state.favoriteExercises,
                         onExerciseClick = onExerciseClick,
-                        onQuickAdd = { id ->
-                            viewModel.onQuickAdd(id)
-                            onQuickAddExercise(id)
-                        }
+                        onQuickAdd = { pendingQuickAdd = it }
                     )
                 }
             }
@@ -143,10 +144,7 @@ fun CatalogScreen(
                         title = "Недавние",
                         exercises = state.recentExercises,
                         onExerciseClick = onExerciseClick,
-                        onQuickAdd = { id ->
-                            viewModel.onQuickAdd(id)
-                            onQuickAddExercise(id)
-                        }
+                        onQuickAdd = { pendingQuickAdd = it }
                     )
                 }
             }
@@ -171,23 +169,159 @@ fun CatalogScreen(
                             card = card,
                             onClick = { onExerciseClick(card.exercise.id) },
                             onFavoriteToggle = { viewModel.onFavoriteToggled(card.exercise.id) },
-                            onQuickAdd = {
-                                viewModel.onQuickAdd(card.exercise.id)
-                                onQuickAddExercise(card.exercise.id)
-                            }
+                            onQuickAdd = { pendingQuickAdd = card }
                         )
                     }
                 }
             }
         }
     }
+
+    pendingQuickAdd?.let { card ->
+        QuickAddTargetDialog(
+            card = card,
+            workouts = state.customWorkouts,
+            onDismiss = { pendingQuickAdd = null },
+            onCreateNew = {
+                viewModel.onQuickAdd(card.exercise.id)
+                onQuickAddExercise(card.exercise.id, null)
+                pendingQuickAdd = null
+            },
+            onAddToWorkout = { workoutId ->
+                viewModel.onQuickAdd(card.exercise.id)
+                onQuickAddExercise(card.exercise.id, workoutId)
+                pendingQuickAdd = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun QuickAddTargetDialog(
+    card: ExerciseCard,
+    workouts: List<Workout>,
+    onDismiss: () -> Unit,
+    onCreateNew: () -> Unit,
+    onAddToWorkout: (Long) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = FitCardWhite,
+        titleContentColor = FitInk,
+        textContentColor = FitMuted,
+        title = {
+            Text(
+                text = "Куда добавить?",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = card.exercise.name,
+                    color = FitInk,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(12.dp))
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable(onClick = onCreateNew),
+                    color = FitAccentRed.copy(alpha = 0.16f),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, FitAccentRed.copy(alpha = 0.42f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, tint = FitAccentRed)
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "Создать новую тренировку",
+                            color = FitInk,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                if (workouts.isEmpty()) {
+                    Text(
+                        text = "Существующих тренировок пока нет.",
+                        color = FitMuted,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    Text(
+                        text = "Добавить в существующую",
+                        color = FitMuted,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 270.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(workouts, key = { it.id }) { workout ->
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .clickable { onAddToWorkout(workout.id) },
+                                color = Color(0xFF171B21),
+                                shape = RoundedCornerShape(14.dp),
+                                border = BorderStroke(1.dp, FitCardBorder)
+                            ) {
+                                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp)) {
+                                    Text(
+                                        text = workout.name,
+                                        color = FitInk,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    if (!workout.notes.isNullOrBlank()) {
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            text = workout.notes,
+                                            color = FitMuted,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена", color = FitAccentRed)
+            }
+        }
+    )
 }
 
 @Composable
 private fun RecommendedPanel(
     state: CatalogUiState,
     onExerciseClick: (Long) -> Unit,
-    onQuickAdd: (Long) -> Unit
+    onQuickAdd: (ExerciseCard) -> Unit
 ) {
     val primary = state.recommendedExercises.first()
 
@@ -267,7 +401,7 @@ private fun RecommendedPanel(
                     )
                 }
                 FilledIconButton(
-                    onClick = { onQuickAdd(primary.exercise.id) },
+                    onClick = { onQuickAdd(primary) },
                     colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = FitAccentRed,
                         contentColor = Color.White
@@ -409,7 +543,7 @@ private fun HorizontalExerciseStrip(
     title: String,
     exercises: List<ExerciseCard>,
     onExerciseClick: (Long) -> Unit,
-    onQuickAdd: (Long) -> Unit
+    onQuickAdd: (ExerciseCard) -> Unit
 ) {
     Column {
         FitSectionTitle(title = title, action = "${exercises.size}")
@@ -419,7 +553,7 @@ private fun HorizontalExerciseStrip(
                 MiniExerciseCard(
                     card = card,
                     onClick = { onExerciseClick(card.exercise.id) },
-                    onQuickAdd = { onQuickAdd(card.exercise.id) }
+                    onQuickAdd = { onQuickAdd(card) }
                 )
             }
         }

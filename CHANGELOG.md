@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.14 - 2026-07-07
+
+- Changed catalog quick-add so it asks whether to create a new workout or add the exercise to an existing workout.
+- Added an existing-workout picker dialog from catalog exercise cards.
+- Ensured quick-added exercises are appended after the workout editor finishes loading existing workout data.
+
 ## 0.4.13 - 2026-07-07
 
 - Reworked the exercise catalog around recommendations, favorites, recent exercises, and quick-add actions.

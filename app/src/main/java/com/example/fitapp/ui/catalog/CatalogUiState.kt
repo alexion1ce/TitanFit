@@ -2,6 +2,7 @@ package com.example.fitapp.ui.catalog
 
 import com.example.fitapp.data.local.entity.Difficulty
 import com.example.fitapp.data.local.entity.Exercise
+import com.example.fitapp.data.local.entity.Workout
 
 data class ExerciseCard(
     val exercise: Exercise,
@@ -25,6 +26,7 @@ data class CatalogUiState(
     val recommendedExercises: List<ExerciseCard> = emptyList(),
     val favoriteExercises: List<ExerciseCard> = emptyList(),
     val recentExercises: List<ExerciseCard> = emptyList(),
+    val customWorkouts: List<Workout> = emptyList(),
     val muscleGroups: List<MuscleChip> = emptyList(),
     val equipment: List<EquipmentChip> = emptyList(),
     val difficulties: List<Difficulty> = Difficulty.entries,

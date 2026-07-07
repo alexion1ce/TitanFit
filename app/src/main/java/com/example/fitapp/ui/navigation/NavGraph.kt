@@ -38,7 +38,9 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         composable(Destinations.CATALOG) {
             CatalogScreen(
                 onExerciseClick = { id -> navController.navigate(Destinations.exerciseDetail(id)) },
-                onQuickAddExercise = { id -> navController.navigate(Destinations.workoutEditor(-1L, id)) }
+                onQuickAddExercise = { exerciseId, workoutId ->
+                    navController.navigate(Destinations.workoutEditor(workoutId ?: -1L, exerciseId))
+                }
             )
         }
 

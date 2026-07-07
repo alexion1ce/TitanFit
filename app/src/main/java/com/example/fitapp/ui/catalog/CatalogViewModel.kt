@@ -10,6 +10,7 @@ import com.example.fitapp.data.repository.EquipmentRepository
 import com.example.fitapp.data.repository.ExerciseCatalogRepository
 import com.example.fitapp.data.repository.ExerciseRepository
 import com.example.fitapp.data.repository.MuscleGroupRepository
+import com.example.fitapp.data.repository.WorkoutRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Locale
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,7 +41,8 @@ class CatalogViewModel @Inject constructor(
     private val muscleGroupRepository: MuscleGroupRepository,
     private val equipmentRepository: EquipmentRepository,
     private val databaseInitializer: DatabaseInitializer,
-    private val catalogRepository: ExerciseCatalogRepository
+    private val catalogRepository: ExerciseCatalogRepository,
+    private val workoutRepository: WorkoutRepository
 ) : ViewModel() {
 
     private val _selectedMuscle = MutableStateFlow<String?>(null)
@@ -81,8 +83,9 @@ class CatalogViewModel @Inject constructor(
         filteredExercises,
         references,
         catalogRepository.observeAllMeta(),
+        workoutRepository.observeCustomWorkouts(),
         filterUi
-    ) { exercises, refs, meta, filter ->
+    ) { exercises, refs, meta, workouts, filter ->
         val metaByExerciseId = meta.associateBy { it.exerciseId }
         val matchingCards = exercises
             .map { it.toCard(refs, metaByExerciseId[it.id]) }
@@ -108,6 +111,7 @@ class CatalogViewModel @Inject constructor(
             recommendedExercises = matchingCards.recommended(),
             favoriteExercises = favoriteCards.take(8),
             recentExercises = recentCards.take(8),
+            customWorkouts = workouts,
             muscleGroups = refs.muscleChips,
             equipment = refs.equipmentChips,
             selectedCollection = filter.collection,

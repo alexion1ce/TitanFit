@@ -74,8 +74,8 @@ fun WorkoutEditorScreen(
         }
     }
 
-    LaunchedEffect(initialExerciseId) {
-        initialExerciseId?.takeIf { it > 0L }?.let { id ->
+    LaunchedEffect(initialExerciseId, state.isLoading) {
+        initialExerciseId?.takeIf { it > 0L && !state.isLoading }?.let { id ->
             viewModel.addPickedExerciseIds(setOf(id))
         }
     }
