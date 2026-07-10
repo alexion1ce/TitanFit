@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.17 - 2026-07-10
+
+- Restored the original PNG exercise artwork after startup crashes on a physical device with the WebP asset bundle.
+
 ## 0.4.16 - 2026-07-10
 
 - Added a safe exit flow for active workouts: continue later, save completed sets and exit, or cancel without saving.
