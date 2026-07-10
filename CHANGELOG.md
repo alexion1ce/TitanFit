@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.18 - 2026-07-10
+
+- Replaced the misleading 68% indicator on the empty progress screen with a neutral analytics icon.
+- Removed the static, non-data-driven program progress card and percentage rings from the Programs screen.
+
 ## 0.4.17 - 2026-07-10
 
 - Restored the original PNG exercise artwork after startup crashes on a physical device with the WebP asset bundle.

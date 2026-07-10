@@ -1,6 +1,5 @@
 package com.example.fitapp.ui.programs
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,13 +24,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.AccessTime
-import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -44,8 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -63,8 +57,6 @@ private val TextSecondary = Color(0xFFC1C5CF)
 private val TextMuted = Color(0xFF8E949F)
 private val Red = Color(0xFFFF4738)
 private val RedDark = Color(0xFFE82319)
-private val Teal = Color(0xFF35D8B1)
-private val Green = Color(0xFF6CD05C)
 private val Blue = Color(0xFF58A6FF)
 
 @Composable
@@ -123,12 +115,10 @@ fun ProgramsScreen(
                             onStartClick = { onStartProgram(today.workout.id) }
                         )
                     }
-                    item { ProgramProgressCard() }
                     item { MyProgramsTitle(onAddClick = onMyWorkoutsClick) }
                     items(state.programs, key = { it.workout.id }) { card ->
                         CompactProgramCard(
                             card = card,
-                            progress = progressFor(card.workout.id),
                             onClick = { onProgramClick(card.workout.id) }
                         )
                     }
@@ -261,87 +251,6 @@ private fun ExerciseStrip(exercises: List<WorkoutExerciseItem>) {
 }
 
 @Composable
-private fun ProgramProgressCard() {
-    GlassCard {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Прогресс программы", color = TextSecondary, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                Text("Подробнее", color = Red, fontSize = 15.sp)
-                Icon(Icons.Outlined.KeyboardArrowRight, contentDescription = null, tint = Red)
-            }
-            Spacer(Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ProgressRing(progress = 0.68f, label = "68%")
-                Spacer(Modifier.width(18.dp))
-                ProgressMetric(Icons.Outlined.CalendarMonth, "12", "тренировок", Teal, Modifier.weight(1f))
-                ProgressMetric(Icons.Outlined.LocalFireDepartment, "3 240", "ккал", Red, Modifier.weight(1f))
-                ProgressMetric(Icons.Outlined.AccessTime, "8 ч 45 мин", "время", Blue, Modifier.weight(1f))
-                ProgressMetric(Icons.Outlined.TrendingUp, "+12%", "прирост", Teal, Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(18.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.68f)
-                        .height(6.dp)
-                        .background(Teal, RoundedCornerShape(6.dp))
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProgressMetric(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String,
-    label: String,
-    tint: Color,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
-        Spacer(Modifier.height(7.dp))
-        Text(value, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(label, color = TextSecondary, fontSize = 12.sp, maxLines = 1)
-    }
-}
-
-@Composable
-private fun ProgressRing(progress: Float, label: String) {
-    Box(modifier = Modifier.size(82.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawArc(
-                color = Color.White.copy(alpha = 0.12f),
-                startAngle = 0f,
-                sweepAngle = 360f,
-                useCenter = false,
-                style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round)
-            )
-            drawArc(
-                color = Teal,
-                startAngle = -90f,
-                sweepAngle = progress * 360f,
-                useCenter = false,
-                style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round)
-            )
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("выполнено", color = TextSecondary, fontSize = 10.sp)
-        }
-    }
-}
-
-@Composable
 private fun MyProgramsTitle(onAddClick: () -> Unit) {
     Row(
         modifier = Modifier
@@ -362,7 +271,7 @@ private fun MyProgramsTitle(onAddClick: () -> Unit) {
 }
 
 @Composable
-private fun CompactProgramCard(card: ProgramCard, progress: Float, onClick: () -> Unit) {
+private fun CompactProgramCard(card: ProgramCard, onClick: () -> Unit) {
     GlassCard(modifier = Modifier.clickable(onClick = onClick)) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -380,15 +289,6 @@ private fun CompactProgramCard(card: ProgramCard, progress: Float, onClick: () -
                     InlineMeta(Icons.Outlined.AccessTime, estimateDuration(card))
                 }
             }
-            SmallRing(progress)
-            Spacer(Modifier.width(12.dp))
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(52.dp)
-                    .background(Color.White.copy(alpha = 0.14f))
-            )
-            Spacer(Modifier.width(10.dp))
             Icon(Icons.Outlined.MoreHoriz, contentDescription = null, tint = TextMuted)
         }
     }
@@ -411,29 +311,6 @@ private fun ProgramBadge(name: String) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Icon(Icons.Outlined.FitnessCenter, contentDescription = null, tint = color, modifier = Modifier.size(32.dp))
         }
-    }
-}
-
-@Composable
-private fun SmallRing(progress: Float) {
-    Box(modifier = Modifier.size(54.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawArc(
-                color = Color.White.copy(alpha = 0.12f),
-                startAngle = 0f,
-                sweepAngle = 360f,
-                useCenter = false,
-                style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
-            )
-            drawArc(
-                color = Green,
-                startAngle = -90f,
-                sweepAngle = progress * 360f,
-                useCenter = false,
-                style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
-            )
-        }
-        Text("${(progress * 100).toInt()}%", color = TextPrimary, fontSize = 13.sp)
     }
 }
 
@@ -467,10 +344,3 @@ private fun EmptyPrograms(message: String) {
 
 private fun estimateDuration(card: ProgramCard): String =
     "${(card.totalSets * 4).coerceIn(35, 75)} мин"
-
-private fun progressFor(id: Long): Float =
-    when ((id % 3).toInt()) {
-        0 -> 0.75f
-        1 -> 0.60f
-        else -> 0.40f
-    }

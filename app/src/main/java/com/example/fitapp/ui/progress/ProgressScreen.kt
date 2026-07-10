@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.Scale
@@ -606,35 +607,25 @@ private fun CenterMessage(title: String, body: String) {
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressRing(0.68f)
+                Surface(
+                    modifier = Modifier.size(86.dp),
+                    shape = CircleShape,
+                    color = AccentTeal.copy(alpha = 0.16f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Outlined.Insights,
+                            contentDescription = null,
+                            tint = AccentTeal,
+                            modifier = Modifier.size(42.dp)
+                        )
+                    }
+                }
                 Spacer(Modifier.height(18.dp))
                 Text(title, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 Text(body, color = Color.White.copy(alpha = 0.74f), textAlign = TextAlign.Center)
             }
         }
-    }
-}
-
-@Composable
-private fun CircularProgressRing(progress: Float) {
-    Box(modifier = Modifier.size(86.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawArc(
-                color = Color.White.copy(alpha = 0.14f),
-                startAngle = 0f,
-                sweepAngle = 360f,
-                useCenter = false,
-                style = Stroke(width = 9.dp.toPx(), cap = StrokeCap.Round)
-            )
-            drawArc(
-                color = AccentTeal,
-                startAngle = -90f,
-                sweepAngle = progress * 360f,
-                useCenter = false,
-                style = Stroke(width = 9.dp.toPx(), cap = StrokeCap.Round)
-            )
-        }
-        Text("${(progress * 100).toInt()}%", color = Color.White, fontWeight = FontWeight.Bold)
     }
 }
 
