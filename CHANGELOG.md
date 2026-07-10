@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.16 - 2026-07-10
+
+- Added a safe exit flow for active workouts: continue later, save completed sets and exit, or cancel without saving.
+- Resume an unfinished workout instead of creating duplicate logs; rest timer alarms are cancelled when leaving a session.
+- Stopped auto-marking uncompleted sets as done when finishing a workout, keeping progress statistics accurate.
+- Reworked weekly progress calculations around Monday-starting calendar weeks and added unit tests for week boundaries and daylight-saving time.
+- Optimized 70 exercise illustrations from PNG to WebP, reducing bundled artwork from about 99 MB to about 3.1 MB.
+
 ## 0.4.15 - 2026-07-07
 
 - Added the ability to add extra sets during an active workout for a specific exercise.

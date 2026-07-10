@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.fitapp"
         minSdk = 26
         targetSdk = 34
-        versionCode = 29
-        versionName = "0.4.15"
+        versionCode = 30
+        versionName = "0.4.16"
     }
 
     buildTypes {
@@ -69,5 +69,7 @@ dependencies {
 
     // Coil (image loading)
     implementation(libs.coil.compose)
+
+    testImplementation(libs.junit)
 
 }

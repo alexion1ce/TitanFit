@@ -1,5 +1,6 @@
 package com.example.fitapp.ui.session
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,7 +71,12 @@ fun ActiveWorkoutScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showFinishDialog by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
     var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+
+    BackHandler(enabled = !state.isLoading && !state.isFinished && !state.shouldExit) {
+        showExitDialog = true
+    }
 
     LaunchedEffect(state.startedAt, state.isFinished) {
         while (state.startedAt > 0L && !state.isFinished) {
@@ -95,7 +101,7 @@ fun ActiveWorkoutScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { showExitDialog = true }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 }
@@ -199,7 +205,43 @@ fun ActiveWorkoutScreen(
         )
     }
 
-    if (state.isFinished) {
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Выйти из тренировки?") },
+            text = {
+                Text("Можно продолжить позже, сохранить отмеченные подходы или отменить тренировку без сохранения.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        viewModel.saveWorkoutAndExit()
+                    }
+                ) { Text("Сохранить выполненные и выйти") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            showExitDialog = false
+                            viewModel.continueLater()
+                        }
+                    ) { Text("Продолжить позже") }
+                    TextButton(
+                        onClick = {
+                            showExitDialog = false
+                            viewModel.cancelWorkout()
+                        }
+                    ) { Text("Отменить без сохранения") }
+                }
+            }
+        )
+    }
+
+    if (state.shouldExit) {
+        LaunchedEffectFinished { onBack() }
+    } else if (state.isFinished) {
         LaunchedEffectFinished { onFinish() }
     }
 }

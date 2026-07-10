@@ -49,7 +49,8 @@ class ActiveWorkoutViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // Создаём новый лог тренировки из шаблона
-                val logId = workoutLogRepository.startWorkout(workoutIdArg)
+                val logId = workoutLogDao.getUnfinishedByWorkoutId(workoutIdArg)?.id
+                    ?: workoutLogRepository.startWorkout(workoutIdArg)
                 loadSession(logId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -190,15 +191,40 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     fun finishWorkout() {
+        finishWorkout(exitAfterSave = false)
+    }
+
+    fun saveWorkoutAndExit() {
+        finishWorkout(exitAfterSave = true)
+    }
+
+    private fun finishWorkout(exitAfterSave: Boolean) {
         viewModelScope.launch {
+            timerJob?.cancel()
             RestTimerNotifications.cancelFinishedNotification(appContext)
             val saved = workoutLogRepository.finishWorkout(_uiState.value.logId)
             _uiState.value = if (saved) {
-                _uiState.value.copy(isFinished = true)
+                _uiState.value.copy(isFinished = true, shouldExit = exitAfterSave)
             } else {
                 _uiState.value.copy(errorMessage = "Не удалось сохранить тренировку в журнал")
             }
         }
+    }
+
+    fun cancelWorkout() {
+        viewModelScope.launch {
+            timerJob?.cancel()
+            RestTimerNotifications.cancelFinishedNotification(appContext)
+            val logId = _uiState.value.logId
+            if (logId > 0L) workoutLogRepository.deleteLog(logId)
+            _uiState.value = _uiState.value.copy(shouldExit = true)
+        }
+    }
+
+    fun continueLater() {
+        timerJob?.cancel()
+        RestTimerNotifications.cancelFinishedNotification(appContext)
+        _uiState.value = _uiState.value.copy(shouldExit = true)
     }
 
     private fun updateSetInState(updated: SetLog) {
@@ -211,7 +237,8 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         timerJob?.cancel()
+        RestTimerNotifications.cancelFinishedNotification(appContext)
+        super.onCleared()
     }
 }

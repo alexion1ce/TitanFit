@@ -21,6 +21,9 @@ interface WorkoutLogDao {
     @Query("SELECT * FROM workout_logs WHERE finishedAt IS NOT NULL ORDER BY startedAt DESC")
     suspend fun getAllFinished(): List<WorkoutLog>
 
+    @Query("SELECT * FROM workout_logs WHERE workoutId = :workoutId AND finishedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
+    suspend fun getUnfinishedByWorkoutId(workoutId: Long): WorkoutLog?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(log: WorkoutLog): Long
 

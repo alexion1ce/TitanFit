@@ -22,6 +22,7 @@ data class ActiveWorkoutUiState(
     val groups: List<ExerciseSetGroup> = emptyList(),
     val restTimer: RestTimerState = RestTimerState(),
     val isFinished: Boolean = false,
+    val shouldExit: Boolean = false,
     val errorMessage: String? = null
 )
 

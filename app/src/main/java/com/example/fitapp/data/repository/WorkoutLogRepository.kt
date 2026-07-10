@@ -5,6 +5,8 @@ import com.example.fitapp.data.local.dao.WorkoutLogDao
 import com.example.fitapp.data.local.entity.SetLog
 import com.example.fitapp.data.local.entity.WorkoutLog
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -131,12 +133,6 @@ class WorkoutLogRepository @Inject constructor(
     /** Завершает тренировку: фиксирует время окончания и длительность. */
     suspend fun finishWorkout(logId: Long): Boolean {
         val log = workoutLogDao.getById(logId) ?: return false
-        val sets = setLogDao.getByLog(logId)
-        if (sets.isNotEmpty() && sets.none { it.done }) {
-            sets.forEach { set ->
-                setLogDao.update(set.copy(done = true))
-            }
-        }
         val now = System.currentTimeMillis()
         val durationMin = ((now - log.startedAt) / 60_000L).toInt()
         workoutLogDao.update(
@@ -202,29 +198,26 @@ class WorkoutLogRepository @Inject constructor(
         val logs = workoutLogDao.getAllFinished()
         if (logs.isEmpty()) return emptyList()
 
-        // Собираем все выполненные подходы с привязкой к дате лога
-        val logById = logs.associateBy { it.id }
-        val allSets = logs.flatMap { log -> setLogDao.getByLog(log.id).filter { it.done } }
-        if (allSets.isEmpty()) return emptyList()
-
-        // Группируем по неделе: понедельник как начало недели
-        val now = System.currentTimeMillis()
-        val msPerWeek = 7 * 24 * 60 * 60 * 1000L
-        val result = mutableListOf<WeeklyVolume>()
-
-        for (i in weeksCount - 1 downTo 0) {
-            val weekEnd = now - (i * msPerWeek)
-            val weekStart = weekEnd - msPerWeek
-
-            val setsInWeek = allSets.filter { setLog ->
-                val logDate = logById[setLog.logId]?.startedAt ?: 0L
-                logDate in weekStart until weekEnd
-            }
-            val volume = setsInWeek.sumOf { it.weight * it.reps }
-            val workoutCount = setsInWeek.map { it.logId }.distinct().size
-            result.add(WeeklyVolume(weekStart, volume, workoutCount))
+        val workouts = logs.mapNotNull { log ->
+            val finishedAt = log.finishedAt ?: return@mapNotNull null
+            val completedSets = setLogDao.getByLog(log.id).filter { it.done }
+            val totalVolume = completedSets
+                .asSequence()
+                .sumOf { it.weight * it.reps }
+            CompletedWorkoutVolume(
+                finishedAt = finishedAt,
+                totalVolume = totalVolume,
+                hasCompletedSets = completedSets.isNotEmpty()
+            )
         }
-        return result
+        if (workouts.none { it.hasCompletedSets }) return emptyList()
+
+        return WeeklyVolumeCalculator.calculate(
+            workouts = workouts,
+            weeksCount = weeksCount,
+            now = Instant.ofEpochMilli(System.currentTimeMillis()),
+            zoneId = ZoneId.systemDefault()
+        )
     }
 
     /** Топ-N личных рекордов по максимальному весу. */
