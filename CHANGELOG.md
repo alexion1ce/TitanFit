@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.36 - 2026-07-26
+
+- Upgraded `FitSurfaceCard`, `GlassCard`, and `RecommendedPanel` across Catalog and Programs to 1-to-1 Cyber Titanium metallic gradient fills (`Brush.linearGradient`) and glowing crimson/steel borders.
+- Enhanced filter chips and search inputs with vibrant active state gradients and crimson accent rings.
+
 ## 0.4.35 - 2026-07-26
 
 - Added explicit Back button on `JournalScreen` top bar and passed `onBack` handler in `NavGraph.kt`.

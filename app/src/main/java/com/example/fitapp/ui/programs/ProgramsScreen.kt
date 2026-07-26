@@ -470,13 +470,28 @@ private fun InlineMeta(icon: androidx.compose.ui.graphics.vector.ImageVector, te
 private fun GlassCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Card.copy(alpha = 0.94f),
+        color = Color.Transparent,
         shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, CardEdge),
-        shadowElevation = 8.dp,
-        content = content
-    )
+        border = BorderStroke(
+            1.dp,
+            Brush.linearGradient(
+                colors = listOf(Color(0xFF3B4352), Red.copy(alpha = 0.35f))
+            )
+        ),
+        shadowElevation = 8.dp
+    ) {
+        Box(
+            modifier = Modifier.background(
+                Brush.linearGradient(
+                    colors = listOf(Color(0xFF1B202A), Color(0xFF13171E))
+                )
+            )
+        ) {
+            content()
+        }
+    }
 }
+
 
 @Composable
 private fun EmptyPrograms(message: String) {

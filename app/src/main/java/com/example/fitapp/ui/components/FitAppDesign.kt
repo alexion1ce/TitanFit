@@ -27,17 +27,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // ===== Cyber Titanium & Crimson Glow (Вариант 1) =====
 val FitScreenBackground = Color(0xFF0D0F12)
 val FitHeaderDark = Color(0xFF0D0F12)
-val FitHeaderSoft = Color(0xFF191E27)
-val FitNavDark = Color(0xFF13171D)
+val FitHeaderSoft = Color(0xFF1E2430)
+val FitNavDark = Color(0xFF12151B)
 val FitCardWhite = Color(0xFF171B21)
 val FitCardBorder = Color(0xFF2B3038)
 val FitInk = Color(0xFFF5F6FA)
 val FitMuted = Color(0xFFC1C5CF)
-val FitMutedLight = Color(0xFFB9BBC2)
+val FitMutedLight = Color(0xFF9EA3AF)
 val FitAccentRed = Color(0xFFFF3B30)
 val FitAccentRedDark = Color(0xFFD32F2F)
 val FitAccentTeal = Color(0xFF00D2FF)
@@ -89,7 +90,7 @@ fun FitScreenHeader(
             Text(
                 text = title,
                 color = Color.White,
-                style = MaterialTheme.typography.headlineLarge,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -99,7 +100,7 @@ fun FitScreenHeader(
                 Text(
                     text = subtitle,
                     color = Color.White.copy(alpha = 0.72f),
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 14.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -119,12 +120,26 @@ fun FitSurfaceCard(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = color,
+        color = Color.Transparent,
         shape = FitCardShape,
-        border = BorderStroke(1.dp, borderColor),
+        border = BorderStroke(
+            1.dp,
+            Brush.linearGradient(
+                colors = listOf(Color(0xFF353C4A), FitAccentRed.copy(alpha = 0.35f))
+            )
+        ),
         shadowElevation = 8.dp
     ) {
-        Column(modifier = Modifier.padding(contentPadding), content = content)
+        Column(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(Color(0xFF1B202A), Color(0xFF13171E))
+                    )
+                )
+                .padding(contentPadding),
+            content = content
+        )
     }
 }
 
@@ -138,20 +153,36 @@ fun FitSectionTitle(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(
+            modifier = Modifier
+                .height(20.dp)
+                .background(FitAccentRed, RoundedCornerShape(4.dp))
+                .padding(horizontal = 2.dp)
+        )
+        Spacer(Modifier.height(4.dp))
         Text(
             text = title,
             color = FitInk,
-            style = MaterialTheme.typography.titleLarge,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp)
         )
         if (action != null) {
-            Text(
-                text = action,
-                color = FitAccentRed,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium
-            )
+            Surface(
+                color = FitAccentRed.copy(alpha = 0.16f),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(0.5.dp, FitAccentRed.copy(alpha = 0.3f))
+            ) {
+                Text(
+                    text = action,
+                    color = FitAccentRed,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
         }
     }
 }
