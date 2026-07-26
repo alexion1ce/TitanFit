@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.37 - 2026-07-26
+
+- Fixed JournalScreen top-left back button to navigate directly to the Progress tab (`Destinations.PROGRESS`).
+- Overhauled `MyWorkoutsScreen` to Option A Cyber Dashboard layout, eliminating all duplicate create buttons and introducing metallic gradient chips (`MetallicChip`).
+- Transformed bottom navigation bar (`AppBottomBar`) into Cyber Titanium metallic surface with glowing top border and radial crimson FAB.
+
 ## 0.4.36 - 2026-07-26
 
 - Upgraded `FitSurfaceCard`, `GlassCard`, and `RecommendedPanel` across Catalog and Programs to 1-to-1 Cyber Titanium metallic gradient fills (`Brush.linearGradient`) and glowing crimson/steel borders.

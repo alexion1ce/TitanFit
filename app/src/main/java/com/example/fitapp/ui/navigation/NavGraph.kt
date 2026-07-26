@@ -170,9 +170,16 @@ fun NavGraph(
         composable(Destinations.JOURNAL) {
             JournalScreen(
                 onEntryClick = { logId -> navController.navigate(Destinations.logDetail(logId)) },
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    navController.navigate(Destinations.PROGRESS) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
         }
+
 
 
         composable(
