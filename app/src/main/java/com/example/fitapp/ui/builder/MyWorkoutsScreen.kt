@@ -2,7 +2,6 @@ package com.example.fitapp.ui.builder
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,12 +24,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,16 +48,19 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.local.entity.Workout
-import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
 import com.example.fitapp.ui.components.FitAccentRed
 import com.example.fitapp.ui.components.FitAccentRedDark
 import com.example.fitapp.ui.components.FitAccentTeal
+import com.example.fitapp.ui.components.FitBrushedSteelCard
 import com.example.fitapp.ui.components.FitCardBorder
 import com.example.fitapp.ui.components.FitCardWhite
+import com.example.fitapp.ui.components.FitCyanPill
+import com.example.fitapp.ui.components.FitDarkPill
 import com.example.fitapp.ui.components.FitHeaderSoft
 import com.example.fitapp.ui.components.FitInk
 import com.example.fitapp.ui.components.FitMuted
 import com.example.fitapp.ui.components.FitScreenBackground
+import com.example.fitapp.ui.components.FitSubPill
 
 private val RedGradient = Brush.horizontalGradient(
     listOf(FitAccentRed, FitAccentRedDark)
@@ -120,7 +120,7 @@ fun MyWorkoutsScreen(
                     )
                 }
 
-                itemsIndexed(state.workoutCards, key = { _, card -> card.workout.id }) { index, card ->
+                itemsIndexed(state.workoutCards, key = { _, card -> card.workout.id }) { _, card ->
                     WorkoutCard(
                         card = card,
                         onStart = { onStartWorkout(card.workout.id) },
@@ -165,8 +165,8 @@ private fun Header(workoutCount: Int) {
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetallicChip(text = "⚡ Уровень: Титан", tint = FitAccentTeal)
-            MetallicChip(text = "🏋️ Всех программ: $workoutCount", tint = FitInk)
+            FitDarkPill(text = "⚡ Уровень: Титан")
+            FitDarkPill(text = "🏋️ Всего программ: $workoutCount")
         }
     }
 }
@@ -243,88 +243,40 @@ private fun WorkoutCard(
 ) {
     val workout = card.workout
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color.Transparent,
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(
-            1.dp,
-            Brush.linearGradient(
-                listOf(Color(0xFF353C4A), FitAccentRed.copy(alpha = 0.35f))
-            )
-        ),
-        shadowElevation = 8.dp
+    FitBrushedSteelCard(
+        onClick = onStart,
+        contentPadding = PaddingValues(16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF1B202A), Color(0xFF13171E))
-                    )
-                )
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    modifier = Modifier.size(64.dp),
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = workout.name.uppercase(),
                     color = Color.White,
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (card.exerciseCode.isNotBlank() && card.primaryMuscleCode.isNotBlank()) {
-                            ExerciseArtworkThumbnail(
-                                exerciseCode = card.exerciseCode,
-                                primaryMuscleCode = card.primaryMuscleCode,
-                                secondaryMuscleCode = card.secondaryMuscleCode,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Outlined.EditNote,
-                                contentDescription = null,
-                                tint = FitScreenBackground,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-                    }
-                }
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
 
-                Spacer(Modifier.width(14.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = workout.name,
-                        color = FitInk,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = workout.notes?.takeIf { it.isNotBlank() } ?: "${card.muscleEmoji} ${card.muscleSummary}",
-                        color = FitMuted,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(RedGradient)
-                        .clickable(onClick = onStart),
-                    contentAlignment = Alignment.Center
-                ) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(34.dp)) {
                     Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Начать тренировку",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Редактировать",
+                        tint = Color(0xFF1E242C),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                IconButton(onClick = onDelete, modifier = Modifier.size(34.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Удалить",
+                        tint = FitAccentRed,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -333,60 +285,18 @@ private fun WorkoutCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                MetallicChip(text = "🟢 ${card.exerciseCount} упр.", tint = FitAccentTeal)
-                MetallicChip(text = "💪 ${card.muscleSummary}", tint = FitInk)
+                FitCyanPill(text = "🏋️ ${card.muscleEmoji} ${card.muscleSummary}")
+                FitDarkPill(text = "⏱ ${card.exerciseCount} упр.")
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onEdit) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Редактировать",
-                        tint = FitMuted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Удалить",
-                        tint = FitAccentRed.copy(alpha = 0.8f),
-                        modifier = Modifier.size(20.dp)
-                    )
+            val tags = workout.notes?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
+            if (!tags.isNullOrEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    tags.take(3).forEach { tag ->
+                        FitSubPill(text = tag)
+                    }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun MetallicChip(text: String, tint: Color) {
-    Surface(
-        color = Color.Transparent,
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, Color(0xFF333B4A))
-    ) {
-        Box(
-            modifier = Modifier
-                .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF1F2530), Color(0xFF141820))
-                    )
-                )
-                .padding(horizontal = 10.dp, vertical = 6.dp)
-        ) {
-            Text(
-                text = text,
-                color = tint,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }

@@ -2,6 +2,7 @@ package com.example.fitapp.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -21,6 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -41,12 +46,112 @@ val FitMuted = Color(0xFFC1C5CF)
 val FitMutedLight = Color(0xFF9EA3AF)
 val FitAccentRed = Color(0xFFFF3B30)
 val FitAccentRedDark = Color(0xFFD32F2F)
-val FitAccentTeal = Color(0xFF00D2FF)
+val FitAccentTeal = Color(0xFF00E5FF)
 val FitAccentGreen = Color(0xFF30D158)
 val FitAccentBlue = Color(0xFF0A84FF)
 
-val FitCardShape = RoundedCornerShape(18.dp)
+val FitCardShape = RoundedCornerShape(20.dp)
 val FitChipShape = RoundedCornerShape(10.dp)
+
+// ===== Brushed Metal Plate Design Tokens (Отполированный стальной титан из Скрина 1) =====
+val FitMetalPlateGradient = Brush.verticalGradient(
+    colors = listOf(
+        Color(0xFFE5EAEE), // Верхний светлый отблик отполированной стали
+        Color(0xFFB7BFCB), // Серый металлик
+        Color(0xFF88909D), // Шлифованная сталь
+        Color(0xFF5E6573)  // Тёмный нижний контур метала
+    )
+)
+
+val FitMetalPlateBorder = BorderStroke(
+    1.5.dp,
+    Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFFFFFFFF).copy(alpha = 0.9f),
+            Color(0xFF808998),
+            Color(0xFF353B47)
+        )
+    )
+)
+
+@Composable
+fun FitBrushedSteelCard(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        color = Color.Transparent,
+        shape = FitCardShape,
+        border = FitMetalPlateBorder,
+        shadowElevation = 12.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .background(FitMetalPlateGradient)
+                .padding(contentPadding),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun FitCyanPill(text: String, modifier: Modifier = Modifier) {
+    Surface(
+        color = FitAccentTeal,
+        shape = CircleShape,
+        shadowElevation = 4.dp,
+        modifier = modifier
+    ) {
+        Text(
+            text = text,
+            color = Color(0xFF07131B),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+        )
+    }
+}
+
+@Composable
+fun FitDarkPill(text: String, modifier: Modifier = Modifier) {
+    Surface(
+        color = Color(0xFF171B22),
+        shape = CircleShape,
+        shadowElevation = 3.dp,
+        modifier = modifier
+    ) {
+        Text(
+            text = text,
+            color = Color(0xFFEEF2F8),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+        )
+    }
+}
+
+@Composable
+fun FitSubPill(text: String, modifier: Modifier = Modifier) {
+    Surface(
+        color = Color(0xFF282F3B).copy(alpha = 0.9f),
+        shape = CircleShape,
+        shadowElevation = 2.dp,
+        modifier = modifier
+    ) {
+        Text(
+            text = text,
+            color = Color(0xFFF0F4FA),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+        )
+    }
+}
 
 @Composable
 fun FitHybridScreen(

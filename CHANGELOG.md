@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.38 - 2026-07-26
+
+- Implemented 1-to-1 Brushed Steel Titanium Metallic Card design (`FitBrushedSteelCard`) matching user reference Screenshot 1.
+- Added vibrant cyan primary pill tags (`FitCyanPill`), dark time/day pills (`FitDarkPill`), and sub-tag pills (`FitSubPill`) with bold uppercase title.
+
 ## 0.4.37 - 2026-07-26
 
 - Fixed JournalScreen top-left back button to navigate directly to the Progress tab (`Destinations.PROGRESS`).
