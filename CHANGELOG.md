@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.39 - 2026-07-26
+
+- Added comprehensive handoff document `HANDOFF.md` detailing project architecture, completed milestones, current progress, next steps, and critical pitfalls.
+
 ## 0.4.38 - 2026-07-26
 
 - Implemented 1-to-1 Brushed Steel Titanium Metallic Card design (`FitBrushedSteelCard`) matching user reference Screenshot 1.
