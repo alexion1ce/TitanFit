@@ -28,20 +28,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-val FitScreenBackground = Color(0xFF020304)
-val FitHeaderDark = Color(0xFF020304)
-val FitHeaderSoft = Color(0xFF171B21)
-val FitNavDark = Color(0xFF101115)
-val FitCardWhite = Color(0xFF101419)
+// ===== Cyber Titanium & Crimson Glow (Вариант 1) =====
+val FitScreenBackground = Color(0xFF0D0F12)
+val FitHeaderDark = Color(0xFF0D0F12)
+val FitHeaderSoft = Color(0xFF191E27)
+val FitNavDark = Color(0xFF13171D)
+val FitCardWhite = Color(0xFF171B21)
 val FitCardBorder = Color(0xFF2B3038)
 val FitInk = Color(0xFFF5F6FA)
 val FitMuted = Color(0xFFC1C5CF)
 val FitMutedLight = Color(0xFFB9BBC2)
-val FitAccentRed = Color(0xFFFF4738)
-val FitAccentRedDark = Color(0xFFE82319)
-val FitAccentTeal = Color(0xFF35D8B1)
-val FitAccentGreen = Color(0xFF3BBF66)
-val FitAccentBlue = Color(0xFF58A6FF)
+val FitAccentRed = Color(0xFFFF3B30)
+val FitAccentRedDark = Color(0xFFD32F2F)
+val FitAccentTeal = Color(0xFF00D2FF)
+val FitAccentGreen = Color(0xFF30D158)
+val FitAccentBlue = Color(0xFF0A84FF)
 
 val FitCardShape = RoundedCornerShape(18.dp)
 val FitChipShape = RoundedCornerShape(10.dp)
@@ -147,7 +148,7 @@ fun FitSectionTitle(
         if (action != null) {
             Text(
                 text = action,
-                color = FitAccentRedDark,
+                color = FitAccentRed,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Medium
             )

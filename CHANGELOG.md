@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.33 - 2026-07-26
+
+- Implemented new **Cyber Titanium & Crimson Glow (Variant 1)** design theme across the application.
+- Updated core design tokens (`Color.kt` & `FitAppDesign.kt`) to deep titanium `#0D0F12`, metallic card surfaces `#171B21`, vibrant crimson red accents `#FF3B30`, and electric cyan highlights `#00D2FF`.
+
 ## 0.4.32 - 2026-07-24
 
 - Expanded TitanFit 3D launcher icon asset to full-bleed edge-to-edge (432x432 px) across all launcher densities and adaptive layers, eliminating white borders and white background cutouts on Android launchers.
