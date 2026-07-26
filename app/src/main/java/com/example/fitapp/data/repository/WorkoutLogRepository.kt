@@ -42,6 +42,7 @@ data class PersonalRecord(
     val exerciseName: String,
     val muscleEmoji: String,
     val maxWeight: Double,
+    val estimated1RM: Double,
     val date: Long
 )
 
@@ -236,14 +237,17 @@ class WorkoutLogRepository @Inject constructor(
         return allSets
             .groupBy { it.exerciseId }
             .map { (exId, sets) ->
-                val best = sets.maxBy { it.weight }
+                val bestWeightSet = sets.maxBy { it.weight }
+                val best1RMSet = sets.maxBy { it.weight * (1.0 + it.reps / 30.0) }
+                val estimated1RM = best1RMSet.weight * (1.0 + best1RMSet.reps / 30.0)
                 val ex = exercises[exId]
                 PersonalRecord(
                     exerciseId = exId,
                     exerciseName = ex?.name ?: "—",
                     muscleEmoji = ex?.primaryMuscleCode?.let { muscles[it]?.emoji } ?: "🏋️",
-                    maxWeight = best.weight,
-                    date = logById[best.logId]?.startedAt ?: 0L
+                    maxWeight = bestWeightSet.weight,
+                    estimated1RM = estimated1RM,
+                    date = logById[bestWeightSet.logId]?.startedAt ?: 0L
                 )
             }
             .sortedByDescending { it.maxWeight }
@@ -272,18 +276,23 @@ class WorkoutLogRepository @Inject constructor(
     /** Общая статистика для шапки экрана прогресса. */
     suspend fun getOverallStats(): OverallStats {
         val logs = workoutLogDao.getAllFinished()
-        if (logs.isEmpty()) return OverallStats(0, 0, 0.0, 0)
+        if (logs.isEmpty()) return OverallStats(0, 0, 0.0, 0, 0)
 
         val logById = logs.associateBy { it.id }
-        val allSets = logs.flatMap { log -> setLogDao.getByLog(log.id).filter { it.done } }
-        val totalVolume = allSets.sumOf { it.weight * it.reps }
+        val allLogsSets = logs.flatMap { log -> setLogDao.getByLog(log.id) }
+        val doneSets = allLogsSets.filter { it.done }
+        val totalVolume = doneSets.sumOf { it.weight * it.reps }
         val totalMinutes = logs.sumOf { it.durationMin ?: 0 }
+        val completionRate = if (allLogsSets.isNotEmpty()) {
+            ((doneSets.size.toDouble() / allLogsSets.size) * 100).toInt().coerceIn(0, 100)
+        } else 0
 
         return OverallStats(
             totalWorkouts = logs.size,
-            totalSets = allSets.size,
+            totalSets = doneSets.size,
             totalVolume = totalVolume,
-            totalMinutes = totalMinutes
+            totalMinutes = totalMinutes,
+            completionRate = completionRate
         )
     }
 }
@@ -292,5 +301,6 @@ data class OverallStats(
     val totalWorkouts: Int,
     val totalSets: Int,
     val totalVolume: Double,
-    val totalMinutes: Int
+    val totalMinutes: Int,
+    val completionRate: Int = 0
 )

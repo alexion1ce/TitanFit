@@ -22,14 +22,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Insights
-import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.Scale
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -226,7 +226,8 @@ private fun ProgressContent(
             KpiCards(
                 totalWorkouts = state.stats.totalWorkouts,
                 records = state.records.size,
-                totalVolume = state.stats.totalVolume
+                totalVolume = state.stats.totalVolume,
+                completionRate = state.stats.completionRate
             )
         }
     }
@@ -346,9 +347,15 @@ private fun VolumeAnalyticsCard(
 
 @Composable
 private fun WeeklyVolumeChart(weekly: List<WeeklyVolume>) {
-    val visible = weekly.takeLast(7)
+    val visible = weekly
+    val count = max(visible.size, 1)
     val maxValue = max(visible.maxOfOrNull { it.totalVolume } ?: 1.0, 1.0)
-    val labels = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+    val dateFormat = SimpleDateFormat("dd.MM", Locale("ru"))
+    val labels = if (visible.isNotEmpty()) {
+        visible.map { dateFormat.format(Date(it.weekStart)) }
+    } else {
+        listOf("—")
+    }
 
     Column {
         Canvas(
@@ -356,10 +363,9 @@ private fun WeeklyVolumeChart(weekly: List<WeeklyVolume>) {
                 .fillMaxWidth()
                 .height(150.dp)
         ) {
-            val count = 7
             val chartHeight = size.height - 24f
             val step = size.width / count
-            val barWidth = step * 0.42f
+            val barWidth = (step * 0.5f).coerceAtMost(36f)
 
             repeat(4) { line ->
                 val y = chartHeight * line / 3f
@@ -397,8 +403,11 @@ private fun WeeklyVolumeChart(weekly: List<WeeklyVolume>) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            labels.forEach { label ->
-                Text(label, color = Ink, fontSize = 12.sp, textAlign = TextAlign.Center)
+            val stepLabel = max(1, count / 6)
+            labels.forEachIndexed { index, label ->
+                if (index % stepLabel == 0 || index == count - 1) {
+                    Text(label, color = Ink, fontSize = 11.sp, textAlign = TextAlign.Center)
+                }
             }
         }
     }
@@ -496,7 +505,7 @@ private fun RecentWorkoutRow(workout: RecentWorkoutSummary, onClick: () -> Unit)
                 Text("${formatNumber(workout.totalVolume)} кг", color = Ink, fontWeight = FontWeight.Medium)
                 Text("${workout.caloriesEstimate} ккал", color = Muted, fontSize = 13.sp)
             }
-            Icon(Icons.Outlined.KeyboardArrowRight, contentDescription = null, tint = Muted)
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Muted)
         }
     }
 }
@@ -515,7 +524,7 @@ private fun RecordMiniCard(record: PersonalRecord) {
     val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale("ru"))
 
     Surface(
-        modifier = Modifier.width(190.dp),
+        modifier = Modifier.width(200.dp),
         color = CardAlt,
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -536,8 +545,8 @@ private fun RecordMiniCard(record: PersonalRecord) {
             Spacer(Modifier.width(12.dp))
             Column {
                 Text(record.exerciseName, color = Ink, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${formatWeight(record.maxWeight)} кг", color = AccentRedDark, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text("1ПМ", color = Ink, fontSize = 13.sp)
+                Text("${formatWeight(record.maxWeight)} кг", color = AccentRedDark, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("1RM ≈ ${formatWeight(record.estimated1RM)} кг", color = Ink, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 Text(dateFormat.format(Date(record.date)), color = Muted, fontSize = 12.sp)
             }
         }
@@ -545,12 +554,10 @@ private fun RecordMiniCard(record: PersonalRecord) {
 }
 
 @Composable
-private fun KpiCards(totalWorkouts: Int, records: Int, totalVolume: Double) {
-    val completion = if (totalVolume > 0.0) (60 + (totalVolume / 1000).toInt()).coerceAtMost(95) else 0
-
+private fun KpiCards(totalWorkouts: Int, records: Int, totalVolume: Double, completionRate: Int) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { DarkKpiCard(Icons.Outlined.TrendingUp, "$totalWorkouts", "Тренировок", AccentRed) }
-        item { DarkKpiCard(Icons.Outlined.FitnessCenter, "$completion%", "Выполнение", AccentTeal) }
+        item { DarkKpiCard(Icons.AutoMirrored.Outlined.TrendingUp, "$totalWorkouts", "Тренировок", AccentRed) }
+        item { DarkKpiCard(Icons.Outlined.FitnessCenter, "$completionRate%", "Выполнение", AccentTeal) }
         item { DarkKpiCard(Icons.Outlined.WorkspacePremium, records.toString(), "Рекордов", Color(0xFFF4B63F)) }
         item { DarkKpiCard(Icons.Outlined.Scale, formatNumber(totalVolume), "Объем", Color(0xFF4EA1FF)) }
     }

@@ -1,5 +1,119 @@
 # Changelog
 
+## 0.4.39 - 2026-07-26
+
+- Added comprehensive handoff document `HANDOFF.md` detailing project architecture, completed milestones, current progress, next steps, and critical pitfalls.
+
+## 0.4.38 - 2026-07-26
+
+- Implemented 1-to-1 Brushed Steel Titanium Metallic Card design (`FitBrushedSteelCard`) matching user reference Screenshot 1.
+- Added vibrant cyan primary pill tags (`FitCyanPill`), dark time/day pills (`FitDarkPill`), and sub-tag pills (`FitSubPill`) with bold uppercase title.
+
+## 0.4.37 - 2026-07-26
+
+- Fixed JournalScreen top-left back button to navigate directly to the Progress tab (`Destinations.PROGRESS`).
+- Overhauled `MyWorkoutsScreen` to Option A Cyber Dashboard layout, eliminating all duplicate create buttons and introducing metallic gradient chips (`MetallicChip`).
+- Transformed bottom navigation bar (`AppBottomBar`) into Cyber Titanium metallic surface with glowing top border and radial crimson FAB.
+
+## 0.4.36 - 2026-07-26
+
+- Upgraded `FitSurfaceCard`, `GlassCard`, and `RecommendedPanel` across Catalog and Programs to 1-to-1 Cyber Titanium metallic gradient fills (`Brush.linearGradient`) and glowing crimson/steel borders.
+- Enhanced filter chips and search inputs with vibrant active state gradients and crimson accent rings.
+
+## 0.4.35 - 2026-07-26
+
+- Added explicit Back button on `JournalScreen` top bar and passed `onBack` handler in `NavGraph.kt`.
+- Transformed `JournalCard` into rich Cyber Titanium metallic card with radial icon glow, metallic linear gradient background, and dedicated glowing crimson detail arrow button.
+
+## 0.4.34 - 2026-07-26
+
+- Fixed ProgramDetailScreen back button touch detection using explicit clip & click Box container.
+- Enhanced JournalScreen cards with Cyber Titanium metallic styling and explicit `ChevronRight` detail navigation arrow.
+- Full visual theme upgrade across ProgramDetailScreen, JournalScreen, and LogDetailScreen to rich Cyber Titanium & Crimson Glow style.
+
+## 0.4.33 - 2026-07-26
+
+- Implemented new **Cyber Titanium & Crimson Glow (Variant 1)** design theme across the application.
+- Updated core design tokens (`Color.kt` & `FitAppDesign.kt`) to deep titanium `#0D0F12`, metallic card surfaces `#171B21`, vibrant crimson red accents `#FF3B30`, and electric cyan highlights `#00D2FF`.
+
+## 0.4.32 - 2026-07-24
+
+- Expanded TitanFit 3D launcher icon asset to full-bleed edge-to-edge (432x432 px) across all launcher densities and adaptive layers, eliminating white borders and white background cutouts on Android launchers.
+
+## 0.4.31 - 2026-07-23
+
+- Fixed Android 8.0+ Adaptive Icons root cause: generated `ic_launcher_foreground.png` bitmap replacing old vector placeholder so launcher icons on all Android phones display TitanFit 3D emblem.
+
+## 0.4.30 - 2026-07-23
+
+- Officially updated app brand name to **TitanFit** in AndroidManifest strings.
+- Applied chosen 3D luxury barbell weight plate emblem design across all launcher mipmap icon densities (`hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`).
+- Updated promo code branding to `TITANFIT`.
+
+## 0.4.29 - 2026-07-23
+
+- Fixed initial launch bug where existing SharedPreferences key bypassed the new 7-step Onboarding Wizard; updated completion key to `onboarding_v2_completed` guaranteeing initial launch wizard execution.
+- Generated 4 distinct commercial app launcher icon design concepts for user review.
+
+## 0.4.28 - 2026-07-23
+
+- Created new 3D/flat neon red & dark graphite app launcher icon across all mipmap density buckets (`hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`) and adaptive icon configurations (`ic_launcher.xml` / `ic_launcher_background.xml`).
+- Architected non-intrusive monetization framework (`AdManager.kt` & `AdBannerContainer.kt`) supporting Banner, Interstitial, and Rewarded Ads (AdMob / Yandex Ads ready).
+- Embedded dark-themed bottom banner container smoothly docked above main navigation bar.
+
+## 0.4.27 - 2026-07-23
+
+- Fixed mobile layout & clipping issues across all screens.
+- Updated `ExerciseArtworkThumbnail` and `ExerciseArtworkHero` to frame illustrations inside white rounded containers with `ContentScale.Fit`, ensuring 100% of human figure, bar, weights, and cyan overlays are completely visible without cropping.
+- Re-architected `ProgramsScreen` header and `TodayProgramCard` layout to eliminate text truncation on 360dp–400dp mobile screens.
+- Wrapped onboarding steps 2, 3, 4 in scrollable views to prevent card clipping on smaller phone displays.
+- Updated `MuscleColorLegend` to responsive `FlowRow` preventing legend text overflow.
+
+## 0.4.26 - 2026-07-22
+
+- Updated muscle color legend circle in `ExerciseArtwork.kt` to cyan (`#00D2FF`) for stabilizing muscles.
+- Re-processed all 70 exercise PNG illustrations using HSV hue transformation to completely eliminate green edge halos/fringes and transform all stabilizing muscle highlights into vibrant cyan/light blue.
+
+## 0.4.25 - 2026-07-22
+
+- Recolored green stabilizing muscle overlays to vibrant cyan/light blue across all exercise PNG illustrations.
+- Compressed all 70 exercise artwork assets using 256-color quantization, reducing total image footprint from 96.3 MB to 11.9 MB (87.7% reduction).
+
+## 0.4.24 - 2026-07-22
+
+- Upgraded Onboarding Wizard to 7-step commercial flow (Muscle Focus Area selection, Preferred Duration 30-90 min).
+- Added interactive Plan Generation animation screen with progress bar and checklist feedback.
+- Added 1-tap Gym vs Home location switcher chip ("🏋️ Зал" / "🏋️ Гантели" / "🏠 Свой вес") in Programs header.
+
+## 0.4.23 - 2026-07-22
+
+- Fixed missing preset database initialization when launching the app directly into Onboarding screen on first run.
+
+## 0.4.22 - 2026-07-22
+
+- Refactored multi-day workout programs into standalone daily templates (Push, Pull, Legs, Upper, Lower, Full Body A/B, Home Upper/Lower).
+- Added "Workout Day Selection Dialog" («Какая сегодня тренировка?») to choose specific split days for today's session.
+
+## 0.4.21 - 2026-07-22
+
+- Added direct numeric keyboard input alongside the slider for age, height, and weight in the onboarding wizard step 1.
+
+## 0.4.20 - 2026-07-22
+
+- Added 6-step Onboarding Assistant for first launch: gender, age, height, weight, goal, training location (gym / home with dumbbells / home bodyweight), experience level, and days per week.
+- Real-time BMI and Mifflin-St Jeor BMR & target daily calorie intake calculations.
+- Recommendation engine matching user preferences to optimal home vs gym preset programs.
+- User profile persistence with option to re-open questionnaire anytime from the Programs header.
+- Added new "Home with dumbbells" preset program (`home_dumbbells`).
+
+## 0.4.19 - 2026-07-22
+
+- Removed remaining fake metrics (artificial completion percentage formula and hardcoded days-per-week calculations).
+- Replaced KPI completion percentage with real set completion rate calculated across user's finished workouts.
+- Dynamic weekly volume chart supporting proper period filtering (1, 4, 12, 52 weeks) with formatted week dates.
+- Added estimated 1RM (One Rep Max) calculation using Epley formula for personal records.
+- Fixed deprecated Material 3 AutoMirrored icon warnings.
+
 ## 0.4.18 - 2026-07-10
 
 - Replaced the misleading 68% indicator on the empty progress screen with a neutral analytics icon.

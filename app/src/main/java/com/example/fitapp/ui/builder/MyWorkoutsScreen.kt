@@ -24,14 +24,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,27 +44,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.local.entity.Workout
-import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
 import com.example.fitapp.ui.components.FitAccentRed
 import com.example.fitapp.ui.components.FitAccentRedDark
+import com.example.fitapp.ui.components.FitAccentTeal
+import com.example.fitapp.ui.components.FitBrushedSteelCard
 import com.example.fitapp.ui.components.FitCardBorder
 import com.example.fitapp.ui.components.FitCardWhite
+import com.example.fitapp.ui.components.FitCyanPill
+import com.example.fitapp.ui.components.FitDarkPill
 import com.example.fitapp.ui.components.FitHeaderSoft
 import com.example.fitapp.ui.components.FitInk
 import com.example.fitapp.ui.components.FitMuted
 import com.example.fitapp.ui.components.FitScreenBackground
+import com.example.fitapp.ui.components.FitSubPill
 
-private val CardPremium = Brush.linearGradient(
-    listOf(Color(0xFF3A3444), Color(0xFF242732), Color(0xFF15191F))
-)
-private val RedGradient = Brush.linearGradient(
-    listOf(Color(0xFFFF6656), Color(0xFFFF332D))
-)
-private val TealGradient = Brush.linearGradient(
-    listOf(Color(0xFF19A98E), Color(0xFF075240))
+private val RedGradient = Brush.horizontalGradient(
+    listOf(FitAccentRed, FitAccentRedDark)
 )
 
 @Composable
@@ -99,35 +94,40 @@ fun MyWorkoutsScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 88.dp, end = 16.dp, bottom = 150.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            contentPadding = PaddingValues(start = 16.dp, top = 42.dp, end = 16.dp, bottom = 130.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Header(
-                    workoutCount = state.workoutCards.size,
-                    latestName = state.workoutCards.firstOrNull()?.workout?.name,
-                    onCreateWorkout = onCreateWorkout
-                )
+                Header(workoutCount = state.workoutCards.size)
+            }
+
+            item {
+                CreateWorkoutHeroCard(onCreateWorkout = onCreateWorkout)
             }
 
             if (state.workoutCards.isEmpty()) {
                 item {
-                    EmptyWorkouts(onCreateWorkout = onCreateWorkout)
+                    EmptyWorkouts()
                 }
             } else {
-                itemsIndexed(state.workoutCards, key = { _, card -> card.workout.id }) { index, card ->
+                item {
+                    Text(
+                        text = "Ваши программы",
+                        color = FitInk,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                    )
+                }
+
+                itemsIndexed(state.workoutCards, key = { _, card -> card.workout.id }) { _, card ->
                     WorkoutCard(
                         card = card,
-                        isFeatured = index == 0,
                         onStart = { onStartWorkout(card.workout.id) },
                         onEdit = { onEditWorkout(card.workout.id) },
                         onDelete = { deleteTarget = card.workout }
                     )
                 }
-            }
-
-            item {
-                CreateWorkoutButton(onClick = onCreateWorkout)
             }
         }
 
@@ -145,66 +145,89 @@ fun MyWorkoutsScreen(
 }
 
 @Composable
-private fun Header(
-    workoutCount: Int,
-    latestName: String?,
-    onCreateWorkout: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+private fun Header(workoutCount: Int) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Column {
             Text(
                 text = "Мои тренировки",
                 color = Color.White,
-                style = MaterialTheme.typography.headlineLarge,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Выбери план на сегодня",
+                text = "Ваши личные программы и шаблоны",
                 color = Color.White.copy(alpha = 0.72f),
-                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 14.sp,
                 maxLines = 1
             )
         }
 
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = Color(0xFF10161E),
-            shape = RoundedCornerShape(24.dp),
-            border = BorderStroke(1.dp, Color(0xFF252D39))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FitDarkPill(text = "⚡ Уровень: Титан")
+            FitDarkPill(text = "🏋️ Всего программ: $workoutCount")
+        }
+    }
+}
+
+@Composable
+private fun CreateWorkoutHeroCard(onCreateWorkout: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onCreateWorkout),
+        color = Color.Transparent,
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(
+            1.dp,
+            Brush.linearGradient(
+                listOf(Color(0xFF3B4352), FitAccentRed.copy(alpha = 0.5f))
+            )
+        ),
+        shadowElevation = 10.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFF1F242F), Color(0xFF13171E))
+                    )
+                )
+                .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(44.dp),
-                    color = Color(0xFF26191A),
-                    shape = RoundedCornerShape(14.dp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(RedGradient),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = FitAccentRed)
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
                 }
+
                 Spacer(Modifier.width(14.dp))
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "$workoutCount тренировок",
+                        text = "Создать свою программу",
                         color = FitInk,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
                     )
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        text = latestName?.let { "Последняя: $it" } ?: "Создай первую программу",
+                        text = "Собственный набор упражнений и подходов",
                         color = FitMuted,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        fontSize = 12.sp,
+                        maxLines = 1
                     )
-                }
-                TextButton(onClick = onCreateWorkout) {
-                    Text("+ Быстрый план", color = Color.White.copy(alpha = 0.88f))
                 }
             }
         }
@@ -214,251 +237,113 @@ private fun Header(
 @Composable
 private fun WorkoutCard(
     card: MyWorkoutCardUi,
-    isFeatured: Boolean,
     onStart: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     val workout = card.workout
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(30.dp),
-        color = Color.Transparent,
-        shadowElevation = if (isFeatured) 14.dp else 8.dp,
-        border = BorderStroke(1.dp, if (isFeatured) Color(0xFF37313F) else FitCardBorder)
+    FitBrushedSteelCard(
+        onClick = onStart,
+        contentPadding = PaddingValues(16.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .background(if (isFeatured) CardPremium else Brush.linearGradient(listOf(FitCardWhite, Color(0xFF15191F))))
-                .padding(20.dp)
-        ) {
-            if (isFeatured) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .width(5.dp)
-                        .height(150.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(RedGradient)
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = if (isFeatured) 12.dp else 0.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        modifier = Modifier.size(70.dp),
-                        color = if (isFeatured) Color(0xFF0D5142) else Color(0xFF10262D),
-                        shape = RoundedCornerShape(22.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (card.exerciseCode.isNotBlank() && card.primaryMuscleCode.isNotBlank()) {
-                                ExerciseArtworkThumbnail(
-                                    exerciseCode = card.exerciseCode,
-                                    primaryMuscleCode = card.primaryMuscleCode,
-                                    secondaryMuscleCode = card.secondaryMuscleCode,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Outlined.EditNote,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.width(18.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = workout.name,
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = workout.notes?.takeIf { it.isNotBlank() } ?: "${card.muscleEmoji} ${card.muscleSummary}",
-                            color = FitMuted,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Surface(
-                        modifier = Modifier
-                            .size(58.dp)
-                            .clickable(onClick = onStart),
-                        color = Color.Transparent,
-                        shape = CircleShape
-                    ) {
-                        Box(
-                            modifier = Modifier.background(TealGradient),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Начать тренировку",
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-                    }
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    InfoChip(text = "${card.exerciseCount} упр.")
-                    InfoChip(text = card.muscleSummary)
-                    InfoChip(text = if (workout.notes.isNullOrBlank()) "Без заметок" else "С заметками")
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ActionPill(
-                        text = "Изменить",
-                        icon = Icons.Default.Edit,
-                        onClick = onEdit
-                    )
-                    ActionPill(
-                        text = "Удалить",
-                        icon = Icons.Default.Delete,
-                        onClick = onDelete
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun InfoChip(text: String) {
-    Surface(
-        color = Color(0xFF252B36),
-        shape = RoundedCornerShape(18.dp)
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            color = FitMuted,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-private fun ActionPill(
-    text: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.clickable(onClick = onClick),
-        color = Color(0xFF2B1A1A),
-        shape = RoundedCornerShape(19.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, tint = FitAccentRed, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(7.dp))
-            Text(
-                text = text,
-                color = FitAccentRed,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-private fun CreateWorkoutButton(onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(68.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = Color.White
-        ),
-        contentPadding = PaddingValues(0.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(RedGradient),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(10.dp))
                 Text(
-                    text = "Создать тренировку",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = workout.name.uppercase(),
+                    color = Color.White,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
+
+                IconButton(onClick = onEdit, modifier = Modifier.size(34.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Редактировать",
+                        tint = Color(0xFF1E242C),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                IconButton(onClick = onDelete, modifier = Modifier.size(34.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Удалить",
+                        tint = FitAccentRed,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FitCyanPill(text = "🏋️ ${card.muscleEmoji} ${card.muscleSummary}")
+                FitDarkPill(text = "⏱ ${card.exerciseCount} упр.")
+            }
+
+            val tags = workout.notes?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
+            if (!tags.isNullOrEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    tags.take(3).forEach { tag ->
+                        FitSubPill(text = tag)
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EmptyWorkouts(onCreateWorkout: () -> Unit) {
+private fun EmptyWorkouts() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF15191F),
-        shape = RoundedCornerShape(30.dp),
-        border = BorderStroke(1.dp, FitCardBorder)
+        color = Color.Transparent,
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, FitCardBorder),
+        shadowElevation = 6.dp
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFF1B202A), Color(0xFF13171E))
+                    )
+                )
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
-                modifier = Modifier.size(72.dp),
-                color = Color(0xFF10262D),
-                shape = RoundedCornerShape(22.dp)
+                modifier = Modifier.size(64.dp),
+                color = FitAccentRed.copy(alpha = 0.15f),
+                shape = CircleShape,
+                border = BorderStroke(1.dp, FitAccentRed.copy(alpha = 0.3f))
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.FitnessCenter, contentDescription = null, tint = Color.White)
+                    Icon(Icons.Outlined.FitnessCenter, contentDescription = null, tint = FitAccentRed, modifier = Modifier.size(32.dp))
                 }
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
             Text(
-                text = "Нет тренировок",
+                text = "У вас пока нет своих программ",
                 color = FitInk,
-                style = MaterialTheme.typography.titleLarge,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
+            Spacer(Modifier.height(4.dp))
             Text(
-                text = "Создай первый план и начни тренировку из этого раздела",
+                text = "Нажмите «Создать свою программу» выше, чтобы составить индивидуальный план тренировок",
                 color = FitMuted,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 6.dp),
+                fontSize = 13.sp,
                 maxLines = 2
             )
-            Spacer(Modifier.height(18.dp))
-            TextButton(onClick = onCreateWorkout) {
-                Text("+ Создать тренировку", color = FitAccentRed, fontWeight = FontWeight.Bold)
-            }
         }
     }
 }
@@ -471,15 +356,16 @@ private fun DeleteConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Удалить тренировку?") },
-        text = { Text("\"$name\" будет удалена без возврата.") },
+        containerColor = FitCardWhite,
+        title = { Text("Удалить тренировку?", color = FitInk, fontWeight = FontWeight.Bold) },
+        text = { Text("\"$name\" будет удалена безвозвратно.", color = FitMuted) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Удалить", color = FitAccentRedDark)
+                Text("Удалить", color = FitAccentRed, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
+            TextButton(onClick = onDismiss) { Text("Отмена", color = FitMuted) }
         }
     )
 }

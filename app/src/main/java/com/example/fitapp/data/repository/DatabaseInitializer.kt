@@ -35,7 +35,8 @@ class DatabaseInitializer @Inject constructor(
         removeDeprecatedExercises()
         updateRenamedExercises()
         seedMissingExercises()
-        if (workoutDao.countPresets() == 0) {
+        if (workoutDao.countPresets() < WorkoutPresets.presets.size) {
+            workoutDao.deletePresets()
             seedPresets()
         }
     }

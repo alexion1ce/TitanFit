@@ -28,13 +28,34 @@ import com.example.fitapp.ui.programs.ProgramsScreen
 import com.example.fitapp.ui.progress.ProgressScreen
 import com.example.fitapp.ui.session.ActiveWorkoutScreen
 
+import com.example.fitapp.ui.onboarding.OnboardingScreen
+
 @Composable
-fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
+fun NavGraph(
+    navController: NavHostController,
+    startDestination: String = Destinations.CATALOG,
+    modifier: Modifier = Modifier
+) {
     NavHost(
         navController = navController,
-        startDestination = Destinations.CATALOG,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(Destinations.ONBOARDING) {
+            OnboardingScreen(
+                onFinish = { selectedProgramId ->
+                    val dest = if (selectedProgramId != null && selectedProgramId > 0) {
+                        Destinations.programDetail(selectedProgramId)
+                    } else {
+                        Destinations.PROGRAMS
+                    }
+                    navController.navigate(dest) {
+                        popUpTo(Destinations.ONBOARDING) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Destinations.CATALOG) {
             CatalogScreen(
                 onExerciseClick = { id -> navController.navigate(Destinations.exerciseDetail(id)) },
@@ -115,7 +136,8 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             ProgramsScreen(
                 onProgramClick = { id -> navController.navigate(Destinations.programDetail(id)) },
                 onStartProgram = { id -> navController.navigate(Destinations.activeWorkout(id)) },
-                onMyWorkoutsClick = { navController.navigate(Destinations.MY_WORKOUTS) }
+                onMyWorkoutsClick = { navController.navigate(Destinations.MY_WORKOUTS) },
+                onOpenOnboarding = { navController.navigate(Destinations.ONBOARDING) }
             )
         }
 
@@ -147,9 +169,18 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
 
         composable(Destinations.JOURNAL) {
             JournalScreen(
-                onEntryClick = { logId -> navController.navigate(Destinations.logDetail(logId)) }
+                onEntryClick = { logId -> navController.navigate(Destinations.logDetail(logId)) },
+                onBack = {
+                    navController.navigate(Destinations.PROGRESS) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
         }
+
+
 
         composable(
             route = Destinations.LOG_DETAIL,

@@ -38,6 +38,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.fitapp.R
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+
 @Composable
 fun ExerciseArtworkThumbnail(
     exerciseCode: String,
@@ -47,12 +51,21 @@ fun ExerciseArtworkThumbnail(
 ) {
     val imageRes = exerciseArtworkResId(exerciseCode, primaryMuscleCode)
     if (imageRes != null) {
-        Image(
-            painter = painterResource(imageRes),
-            contentDescription = null,
-            modifier = modifier.clip(RoundedCornerShape(12.dp)),
-            contentScale = ContentScale.Crop
-        )
+        Surface(
+            modifier = modifier,
+            color = Color.White,
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, Color(0xFF2B3038).copy(alpha = 0.5f))
+        ) {
+            Image(
+                painter = painterResource(imageRes),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(3.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
     } else {
         MissingArtwork(modifier)
     }
@@ -70,15 +83,24 @@ fun ExerciseArtworkHero(
     var showFullImage by remember { mutableStateOf(false) }
 
     if (imageRes != null) {
-        Image(
-            painter = painterResource(imageRes),
-            contentDescription = exerciseName,
+        Surface(
             modifier = modifier
                 .fillMaxWidth()
-                .aspectRatio(16f / 9f)
+                .aspectRatio(4f / 3f)
                 .clickable { showFullImage = true },
-            contentScale = ContentScale.Crop
-        )
+            color = Color.White,
+            shape = RoundedCornerShape(18.dp),
+            border = BorderStroke(1.dp, Color(0xFF2B3038))
+        ) {
+            Image(
+                painter = painterResource(imageRes),
+                contentDescription = exerciseName,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
         if (showFullImage) {
             FullScreenArtworkDialog(
                 imageRes = imageRes,
@@ -90,23 +112,25 @@ fun ExerciseArtworkHero(
         MissingArtwork(
             modifier = modifier
                 .fillMaxWidth()
-                .aspectRatio(16f / 9f)
+                .aspectRatio(4f / 3f)
         )
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MuscleColorLegend(modifier: Modifier = Modifier) {
-    Row(
+    FlowRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         LegendItem(Color(0xFFE53935), "основная")
         LegendItem(Color(0xFFFF8A3D), "помогает")
-        LegendItem(Color(0xFF43A047), "стабилизирует")
+        LegendItem(Color(0xFF00D2FF), "стабилизирует")
     }
 }
+
 
 @Composable
 private fun LegendItem(color: Color, label: String) {

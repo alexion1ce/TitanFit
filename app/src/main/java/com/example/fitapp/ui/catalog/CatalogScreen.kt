@@ -1,7 +1,9 @@
 package com.example.fitapp.ui.catalog
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -327,16 +329,27 @@ private fun RecommendedPanel(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
+        color = Color.Transparent,
         shape = FitCardShape,
-        color = Color(0xFF111820),
-        border = BorderStroke(1.dp, Color(0xFF263241)),
-        shadowElevation = 8.dp
+        border = BorderStroke(
+            1.dp,
+            Brush.linearGradient(
+                colors = listOf(Color(0xFF3B4352), FitAccentRed.copy(alpha = 0.4f))
+            )
+        ),
+        shadowElevation = 10.dp
     ) {
         Column(
             modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(Color(0xFF1C222C), Color(0xFF13171E))
+                    )
+                )
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -569,7 +582,7 @@ private fun MiniExerciseCard(
     Surface(
         modifier = Modifier
             .width(196.dp)
-            .height(142.dp)
+            .height(152.dp)
             .clip(FitCardShape)
             .clickable(onClick = onClick),
         shape = FitCardShape,
@@ -577,6 +590,7 @@ private fun MiniExerciseCard(
         border = BorderStroke(1.dp, FitCardBorder),
         shadowElevation = 6.dp
     ) {
+
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ExerciseThumb(card = card, size = 48)

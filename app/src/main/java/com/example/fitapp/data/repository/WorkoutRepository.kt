@@ -9,6 +9,7 @@ import com.example.fitapp.data.local.entity.Workout
 import com.example.fitapp.data.local.entity.WorkoutExercise
 import com.example.fitapp.data.local.entity.WorkoutType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,15 +47,18 @@ class WorkoutRepository @Inject constructor(
     private val workoutDao: WorkoutDao,
     private val workoutExerciseDao: WorkoutExerciseDao,
     private val exerciseRepository: ExerciseRepository,
-    private val muscleGroupRepository: MuscleGroupRepository
+    private val muscleGroupRepository: MuscleGroupRepository,
+    private val databaseInitializer: DatabaseInitializer
 ) {
 
     fun observeCustomWorkouts(): Flow<List<Workout>> =
         workoutDao.observeByType(WorkoutType.CUSTOM.storageKey)
 
     /** Готовые встроенные программы (пресеты). */
-    fun observePresets(): Flow<List<Workout>> =
-        workoutDao.observeByType(WorkoutType.PRESET.storageKey)
+    fun observePresets(): Flow<List<Workout>> = flow {
+        databaseInitializer.initializeIfNeeded()
+        workoutDao.observeByType(WorkoutType.PRESET.storageKey).collect { emit(it) }
+    }
 
     suspend fun getDetail(id: Long): WorkoutDetail? {
         val withEx = workoutDao.getWithExercises(id) ?: return null

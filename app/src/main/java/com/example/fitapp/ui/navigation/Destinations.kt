@@ -8,6 +8,7 @@ object Destinations {
     const val PROGRAMS = "programs"
     const val JOURNAL = "journal"
     const val PROGRESS = "progress"
+    const val ONBOARDING = "onboarding"
     const val EXERCISE_DETAIL = "exercise/{exerciseId}"
     const val MY_WORKOUTS = "my_workouts"
     const val WORKOUT_EDITOR = "workout_editor/{workoutId}?exerciseId={exerciseId}"

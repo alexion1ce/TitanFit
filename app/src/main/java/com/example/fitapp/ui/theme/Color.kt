@@ -2,32 +2,32 @@ package com.example.fitapp.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ===== Единый тёмный дизайн приложения =====
-val md_primary = Color(0xFFFF4738)
+// ===== Cyber Titanium & Crimson Glow (Вариант 1) =====
+val md_primary = Color(0xFFFF3B30)
 val md_onPrimary = Color(0xFFFFFFFF)
-val md_primaryContainer = Color(0xFF331816)
+val md_primaryContainer = Color(0xFF381412)
 val md_onPrimaryContainer = Color(0xFFFFDAD5)
 
-val md_secondary = Color(0xFF35D8B1)
-val md_onSecondary = Color(0xFFFFFFFF)
-val md_secondaryContainer = Color(0xFF12352E)
-val md_onSecondaryContainer = Color(0xFFC8F7EA)
+val md_secondary = Color(0xFF00D2FF)
+val md_onSecondary = Color(0xFF003643)
+val md_secondaryContainer = Color(0xFF004E60)
+val md_onSecondaryContainer = Color(0xFFC8F7FF)
 
-val md_tertiary = Color(0xFF58A6FF)
+val md_tertiary = Color(0xFFFF9500)
 val md_onTertiary = Color(0xFFFFFFFF)
 
-val md_background = Color(0xFF020304)
+val md_background = Color(0xFF0D0F12)
 val md_onBackground = Color(0xFFF5F6FA)
-val md_surface = Color(0xFF101419)
+val md_surface = Color(0xFF13171D)
 val md_onSurface = Color(0xFFF5F6FA)
-val md_surfaceVariant = Color(0xFF171B21)
+val md_surfaceVariant = Color(0xFF1A1F27)
 val md_onSurfaceVariant = Color(0xFFC1C5CF)
 
 val md_outline = Color(0xFF2B3038)
-val md_error = Color(0xFFFF6A57)
+val md_error = Color(0xFFFF453A)
 val md_onError = Color(0xFFFFFFFF)
 
-// Эти значения оставлены для совместимости с существующей темой.
+// Совместимость с темной темой
 val md_primary_dark = md_primary
 val md_onPrimary_dark = md_onPrimary
 val md_primaryContainer_dark = md_primaryContainer

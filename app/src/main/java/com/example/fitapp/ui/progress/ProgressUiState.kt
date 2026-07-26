@@ -14,7 +14,7 @@ enum class ProgressPeriod(val weeksCount: Int) {
 
 data class ProgressUiState(
     val isLoading: Boolean = true,
-    val stats: OverallStats = OverallStats(0, 0, 0.0, 0),
+    val stats: OverallStats = OverallStats(0, 0, 0.0, 0, 0),
     val weeklyVolume: List<WeeklyVolume> = emptyList(),
     val recentWorkouts: List<RecentWorkoutSummary> = emptyList(),
     val records: List<PersonalRecord> = emptyList(),

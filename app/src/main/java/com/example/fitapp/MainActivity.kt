@@ -9,13 +9,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
+import com.example.fitapp.data.repository.UserProfileRepository
+import com.example.fitapp.ui.navigation.Destinations
 import com.example.fitapp.ui.navigation.MainScreen
 import com.example.fitapp.ui.session.RestTimerNotifications
 import com.example.fitapp.ui.theme.FitAppTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var userProfileRepository: UserProfileRepository
+
     private val requestNotificationsPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
@@ -24,9 +30,16 @@ class MainActivity : ComponentActivity() {
         RestTimerNotifications.createChannel(this)
         requestNotificationsPermissionIfNeeded()
         enableEdgeToEdge()
+
+        val startDestination = if (userProfileRepository.isCompleted()) {
+            Destinations.CATALOG
+        } else {
+            Destinations.ONBOARDING
+        }
+
         setContent {
             FitAppTheme {
-                MainScreen()
+                MainScreen(startDestination = startDestination)
             }
         }
     }
