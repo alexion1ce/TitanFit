@@ -1,0 +1,24 @@
+# Gradle / Android build output
+.gradle/
+.kotlin/
+build/
+app/build/
+
+# Local machine settings
+local.properties
+.idea/
+*.iml
+
+# Generated logs and reports
+*.log
+
+# Codex local attachments
+.codex-remote-attachments/
+
+# Local artwork review artifacts
+rejected-assets/
+tmp_*contact_sheet*.jpg
+
+# OS files
+.DS_Store
+Thumbs.db
