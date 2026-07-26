@@ -2,6 +2,7 @@ package com.example.fitapp.ui.journal
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,8 +21,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.AlertDialog
@@ -43,6 +44,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +65,7 @@ import com.example.fitapp.ui.components.FitScreenBackground
 @Composable
 fun JournalScreen(
     onEntryClick: (Long) -> Unit,
+    onBack: (() -> Unit)? = null,
     viewModel: JournalViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -71,7 +75,28 @@ fun JournalScreen(
         containerColor = FitScreenBackground,
         topBar = {
             TopAppBar(
-                title = { Text("Журнал тренировок", fontWeight = FontWeight.Bold, color = FitInk) },
+                title = { Text("Журнал тренировок", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = FitInk) },
+                navigationIcon = {
+                    if (onBack != null) {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 12.dp, end = 4.dp)
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.12f))
+                                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape)
+                                .clickable(onClick = onBack),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Назад",
+                                tint = FitInk,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = FitScreenBackground,
                     titleContentColor = FitInk
@@ -99,7 +124,7 @@ fun JournalScreen(
                         .fillMaxSize()
                         .padding(padding),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     items(state.entries, key = { it.log.id }) { entry ->
                         JournalCard(
@@ -116,13 +141,13 @@ fun JournalScreen(
             AlertDialog(
                 onDismissRequest = { deleteTarget = null },
                 containerColor = FitCardWhite,
-                title = { Text("Удалить запись?", color = FitInk) },
+                title = { Text("Удалить запись?", color = FitInk, fontWeight = FontWeight.Bold) },
                 text = { Text("Запись от ${entry.dateText} будет удалена безвозвратно.", color = FitMuted) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.deleteEntry(entry.log.id)
                         deleteTarget = null
-                    }) { Text("Удалить", color = FitAccentRed) }
+                    }) { Text("Удалить", color = FitAccentRed, fontWeight = FontWeight.Bold) }
                 },
                 dismissButton = {
                     TextButton(onClick = { deleteTarget = null }) { Text("Отмена", color = FitMuted) }
@@ -142,21 +167,39 @@ private fun JournalCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = FitCardWhite,
+        color = Color.Transparent,
         shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, FitCardBorder),
-        shadowElevation = 6.dp
+        border = BorderStroke(
+            1.dp,
+            Brush.linearGradient(
+                colors = listOf(Color(0xFF333B4A), FitAccentRed.copy(alpha = 0.35f))
+            )
+        ),
+        shadowElevation = 8.dp
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(Color(0xFF1B202A), Color(0xFF13171E))
+                    )
+                )
+                .padding(14.dp)
         ) {
-            Surface(
-                color = FitAccentRed.copy(alpha = 0.16f),
-                shape = CircleShape,
-                modifier = Modifier.size(46.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Иконка журнала с неоновым градиентом
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(FitAccentRed.copy(alpha = 0.35f), Color(0xFF241416))
+                            )
+                        )
+                        .border(1.dp, FitAccentRed.copy(alpha = 0.5f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         Icons.Outlined.History,
                         contentDescription = null,
@@ -164,50 +207,74 @@ private fun JournalCard(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    entry.log.workoutName,
-                    color = FitInk,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                Spacer(Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        entry.dateText,
-                        fontSize = 12.sp,
-                        color = FitMuted
+                        text = entry.log.workoutName,
+                        color = FitInk,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        "⏱ ${entry.durationText}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = FitAccentTeal
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = entry.dateText,
+                            fontSize = 12.sp,
+                            color = FitMuted
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            color = FitAccentTeal.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(0.5.dp, FitAccentTeal.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = "⏱ ${entry.durationText}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = FitAccentTeal,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Удалить",
+                        tint = FitAccentRed.copy(alpha = 0.75f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(4.dp))
+
+                // Кнопка со стрелкой детального просмотра
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(FitAccentRed.copy(alpha = 0.18f))
+                        .border(1.dp, FitAccentRed.copy(alpha = 0.4f), CircleShape)
+                        .clickable(onClick = onClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Перейти к деталям",
+                        tint = FitAccentRed,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
-
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Удалить",
-                    tint = FitAccentRed.copy(alpha = 0.8f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Детали",
-
-                tint = FitMuted,
-                modifier = Modifier.size(22.dp)
-            )
         }
     }
 }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.35 - 2026-07-26
+
+- Added explicit Back button on `JournalScreen` top bar and passed `onBack` handler in `NavGraph.kt`.
+- Transformed `JournalCard` into rich Cyber Titanium metallic card with radial icon glow, metallic linear gradient background, and dedicated glowing crimson detail arrow button.
+
 ## 0.4.34 - 2026-07-26
 
 - Fixed ProgramDetailScreen back button touch detection using explicit clip & click Box container.
