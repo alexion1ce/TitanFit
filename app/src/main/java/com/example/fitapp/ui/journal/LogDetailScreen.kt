@@ -1,5 +1,7 @@
 package com.example.fitapp.ui.journal
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,17 +19,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -35,10 +35,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.local.entity.SetLog
 import com.example.fitapp.data.repository.LoggedExerciseRow
+import com.example.fitapp.ui.components.FitAccentRed
+import com.example.fitapp.ui.components.FitAccentTeal
+import com.example.fitapp.ui.components.FitCardBorder
+import com.example.fitapp.ui.components.FitCardWhite
+import com.example.fitapp.ui.components.FitInk
+import com.example.fitapp.ui.components.FitMuted
+import com.example.fitapp.ui.components.FitScreenBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,14 +57,19 @@ fun LogDetailScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = FitScreenBackground,
         topBar = {
             TopAppBar(
-                title = { Text(state.workoutName.ifBlank { "Тренировка" }, maxLines = 1) },
+                title = { Text(state.workoutName.ifBlank { "Тренировка" }, maxLines = 1, fontWeight = FontWeight.Bold, color = FitInk) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", tint = FitInk)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = FitScreenBackground,
+                    titleContentColor = FitInk
+                )
             )
         }
     ) { padding ->
@@ -64,13 +77,13 @@ fun LogDetailScreen(
             state.isLoading -> Box(
                 Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
-            ) { CircularProgressIndicator() }
+            ) { CircularProgressIndicator(color = FitAccentRed) }
 
             state.errorMessage != null -> Box(
                 Modifier.fillMaxSize().padding(padding).padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(state.errorMessage!!, color = MaterialTheme.colorScheme.error)
+                Text(state.errorMessage!!, color = FitAccentRed)
             }
 
             else -> LazyColumn(
@@ -78,10 +91,8 @@ fun LogDetailScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Шапка со статистикой
                 item { StatsHeader(state) }
 
-                // Упражнения
                 items(state.exercises, key = { it.exerciseId }) { row ->
                     LoggedExerciseCard(row)
                 }
@@ -95,20 +106,21 @@ private fun StatsHeader(state: LogDetailUiState) {
     Column {
         Text(
             state.workoutName,
-            style = MaterialTheme.typography.headlineMedium,
+            color = FitInk,
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.height(4.dp))
         Text(
             state.dateText,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            fontSize = 14.sp,
+            color = FitMuted
         )
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StatBadge("⏱", state.durationText)
             StatBadge("✅", "${state.doneSets}/${state.totalSets} подходов")
-            StatBadge("🏋️", "${formatVolume(state.totalVolume)} кг·повт")
+            StatBadge("🏋️", "${formatVolume(state.totalVolume)} кг")
         }
     }
 }
@@ -116,13 +128,15 @@ private fun StatsHeader(state: LogDetailUiState) {
 @Composable
 private fun StatBadge(emoji: String, text: String) {
     Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shape = RoundedCornerShape(8.dp)
+        color = FitCardWhite,
+        border = BorderStroke(1.dp, FitCardBorder),
+        shape = RoundedCornerShape(10.dp)
     ) {
         Text(
             "$emoji $text",
-            style = MaterialTheme.typography.labelMedium,
+            color = FitInk,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
         )
     }
@@ -130,78 +144,68 @@ private fun StatBadge(emoji: String, text: String) {
 
 @Composable
 private fun LoggedExerciseCard(row: LoggedExerciseRow) {
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        color = FitCardWhite,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, FitCardBorder),
+        shadowElevation = 6.dp
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(row.muscleEmoji, style = MaterialTheme.typography.headlineMedium)
-                Spacer(Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        row.exerciseName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        "Макс: ${formatWeight(row.topWeight)} кг · Объём: ${formatVolume(row.totalVolume)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Text(row.muscleEmoji, fontSize = 24.sp)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    row.exerciseName,
+                    color = FitInk,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            if (row.sets.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.sets.forEachIndexed { idx, setLog ->
+                        SetLogRow(setIndex = idx + 1, setLog = setLog)
+                    }
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            // Таблица подходов
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text("№", modifier = Modifier.width(32.dp), style = MaterialTheme.typography.labelMedium)
-                Text("Вес (кг)", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-                Text("Повт.", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-                Text("Статус", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-            }
-            Spacer(Modifier.height(4.dp))
-            row.sets.forEach { set -> SetLine(set) }
         }
     }
 }
 
 @Composable
-private fun SetLine(set: SetLog) {
+private fun SetLogRow(setIndex: Int, setLog: SetLog) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(FitScreenBackground, RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            "${set.setNumber}",
-            modifier = Modifier.width(32.dp),
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            formatWeight(set.weight),
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            "${set.reps}",
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            if (set.done) "✅ Выполнен" else "⏸ Пропущен",
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.labelSmall,
-            color = if (set.done) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text("Подход $setIndex", fontSize = 13.sp, color = FitMuted)
+        if (setLog.done) {
+            Text(
+                "${setLog.weight} кг × ${setLog.reps} повт",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = FitAccentTeal
+            )
+        } else {
+            Text("Пропущен", fontSize = 13.sp, color = FitMuted)
+        }
     }
 }
 
-private fun formatWeight(value: Double): String =
-    if (value == 0.0) "—" else if (value == value.toLong().toDouble()) value.toLong().toString()
-    else value.toString()
 
-private fun formatVolume(value: Double): String =
-    if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
+private fun formatVolume(volume: Double): String {
+    return if (volume >= 1000) {
+        String.format("%.1f т", volume / 1000)
+    } else {
+        "${volume.toInt()}"
+    }
+}

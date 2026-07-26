@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.34 - 2026-07-26
+
+- Fixed ProgramDetailScreen back button touch detection using explicit clip & click Box container.
+- Enhanced JournalScreen cards with Cyber Titanium metallic styling and explicit `ChevronRight` detail navigation arrow.
+- Full visual theme upgrade across ProgramDetailScreen, JournalScreen, and LogDetailScreen to rich Cyber Titanium & Crimson Glow style.
+
 ## 0.4.33 - 2026-07-26
 
 - Implemented new **Cyber Titanium & Crimson Glow (Variant 1)** design theme across the application.

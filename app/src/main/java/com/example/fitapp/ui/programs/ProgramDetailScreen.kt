@@ -2,6 +2,7 @@ package com.example.fitapp.ui.programs
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,19 +24,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -49,16 +50,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.repository.WorkoutExerciseItem
 import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
 
-private val DetailBackground = Color(0xFF020304)
-private val DetailCard = Color(0xFF101419)
+private val DetailBackground = Color(0xFF0D0F12)
+private val DetailCard = Color(0xFF171B21)
 private val DetailCardEdge = Color(0xFF2B3038)
 private val DetailText = Color(0xFFF5F6FA)
 private val DetailTextSecondary = Color(0xFFC1C5CF)
-private val DetailTextMuted = Color(0xFF8E949F)
-private val DetailRed = Color(0xFFFF4738)
-private val DetailRedDark = Color(0xFFE82319)
-private val DetailTeal = Color(0xFF35D8B1)
-private val DetailBlue = Color(0xFF58A6FF)
+private val DetailRed = Color(0xFFFF3B30)
+private val DetailRedDark = Color(0xFFD32F2F)
+private val DetailTeal = Color(0xFF00D2FF)
+private val DetailBlue = Color(0xFF0A84FF)
 
 @Composable
 fun ProgramDetailScreen(
@@ -80,7 +80,7 @@ fun ProgramDetailScreen(
                 .height(280.dp)
                 .background(
                     Brush.radialGradient(
-                        colors = listOf(Color(0xFF171B21), DetailBackground),
+                        colors = listOf(Color(0xFF1E2430), DetailBackground),
                         center = Offset(380f, 40f),
                         radius = 560f
                     )
@@ -126,7 +126,7 @@ private fun ProgramDetailContent(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 32.dp, end = 16.dp, bottom = 118.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 118.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
@@ -168,28 +168,30 @@ private fun ProgramHeader(
             .fillMaxWidth()
             .statusBarsPadding()
     ) {
-        Surface(
-            modifier = Modifier.size(46.dp),
-            color = Color.White.copy(alpha = 0.08f),
-            shape = CircleShape,
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+        Box(
+            modifier = Modifier
+                .size(46.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.12f))
+                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape)
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Назад",
-                    tint = DetailText
-                )
-            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Назад",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
         }
 
-        Spacer(Modifier.height(26.dp))
+        Spacer(Modifier.height(20.dp))
 
         Text(
             text = state.name.ifBlank { "Программа" },
             color = DetailText,
-            fontSize = 34.sp,
-            lineHeight = 38.sp,
+            fontSize = 32.sp,
+            lineHeight = 36.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
@@ -200,8 +202,8 @@ private fun ProgramHeader(
             Text(
                 text = state.description,
                 color = DetailTextSecondary,
-                fontSize = 16.sp,
-                lineHeight = 22.sp,
+                fontSize = 15.sp,
+                lineHeight = 21.sp,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
@@ -278,7 +280,7 @@ private fun SectionTitle(title: String) {
                 .background(DetailRed, RoundedCornerShape(4.dp))
         )
         Spacer(Modifier.width(10.dp))
-        Text(title, color = DetailText, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(title, color = DetailText, fontSize = 22.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -288,7 +290,7 @@ private fun ExerciseRow(index: Int, item: WorkoutExerciseItem, onClick: () -> Un
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = DetailCard.copy(alpha = 0.94f),
+        color = DetailCard,
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(1.dp, DetailCardEdge),
         shadowElevation = 8.dp
@@ -384,7 +386,7 @@ private fun StartWorkoutBar(
                     .fillMaxWidth()
                     .height(58.dp)
                     .background(
-                        Brush.horizontalGradient(listOf(Color(0xFFFF6A57), DetailRedDark)),
+                        Brush.horizontalGradient(listOf(DetailRed, DetailRedDark)),
                         RoundedCornerShape(18.dp)
                     )
                     .clickable(onClick = onStartWorkout),
