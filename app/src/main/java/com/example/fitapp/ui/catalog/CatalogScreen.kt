@@ -66,6 +66,10 @@ import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
 import com.example.fitapp.ui.components.FitAccentRed
 import com.example.fitapp.ui.components.FitAccentRedDark
 import com.example.fitapp.ui.components.FitAccentTeal
+import com.example.fitapp.ui.components.FitBrushedSteelCard
+import com.example.fitapp.ui.components.FitCyanPill
+import com.example.fitapp.ui.components.FitDarkPill
+import com.example.fitapp.ui.components.FitSubPill
 import com.example.fitapp.ui.components.FitCardBorder
 import com.example.fitapp.ui.components.FitCardShape
 import com.example.fitapp.ui.components.FitCardWhite
@@ -634,37 +638,36 @@ private fun ExerciseCardItem(
     onFavoriteToggle: () -> Unit,
     onQuickAdd: () -> Unit
 ) {
-    Surface(
+    FitBrushedSteelCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(FitCardShape)
-            .clickable(onClick = onClick),
-        shape = FitCardShape,
-        color = FitCardWhite,
-        border = BorderStroke(1.dp, FitCardBorder),
-        shadowElevation = 6.dp
+            .clip(FitCardShape),
+        contentPadding = PaddingValues(14.dp),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ExerciseThumb(card = card, size = 78)
-            Spacer(Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = card.exercise.name,
-                    color = FitInk,
+                    color = Color(0xFF121820),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FitCyanPill("${card.muscleEmoji} ${card.muscleGroupName}")
+                    FitDarkPill(card.equipmentName)
+                }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "${card.muscleEmoji} ${card.muscleGroupName} · ${card.equipmentName}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = FitMuted,
+                    color = Color(0xFF303944),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -673,7 +676,7 @@ private fun ExerciseCardItem(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    DifficultyChip(difficulty = Difficulty.fromName(card.exercise.difficulty))
+                    FitSubPill(card.exercise.difficulty)
                     if (card.lastUsedAt != null) {
                         MetaChip("Недавнее", FitAccentTeal)
                     }

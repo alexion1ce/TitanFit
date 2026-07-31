@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.40 - 2026-07-31
+
+- Reworked catalog exercise cards to use the brushed steel plate design with cyan, dark, and secondary pill tags.
+- Preserved favorites and quick-add actions while removing the old dark card layout and oversized exercise thumbnail.
+
 ## 0.4.39 - 2026-07-26
 
 - Added comprehensive handoff document `HANDOFF.md` detailing project architecture, completed milestones, current progress, next steps, and critical pitfalls.
