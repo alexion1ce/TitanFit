@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.41 - 2026-07-31
+
+- Restored exercise artwork thumbnails in the redesigned brushed steel catalog cards.
+
 ## 0.4.40 - 2026-07-31
 
 - Reworked catalog exercise cards to use the brushed steel plate design with cyan, dark, and secondary pill tags.

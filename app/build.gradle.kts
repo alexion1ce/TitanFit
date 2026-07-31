@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.fitapp"
         minSdk = 26
         targetSdk = 34
-        versionCode = 54
-        versionName = "0.4.40"
+        versionCode = 55
+        versionName = "0.4.41"
     }
 
     buildTypes {

@@ -649,6 +649,9 @@ private fun ExerciseCardItem(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            ExerciseThumb(card = card, size = 78)
+            Spacer(Modifier.width(12.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = card.exercise.name,
