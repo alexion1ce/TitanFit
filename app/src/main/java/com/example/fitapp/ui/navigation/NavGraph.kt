@@ -158,6 +158,9 @@ fun NavGraph(
         ) {
             ActiveWorkoutScreen(
                 onBack = { navController.popBackStack() },
+                onOpenTechnique = { exerciseId ->
+                    navController.navigate(Destinations.exerciseDetail(exerciseId))
+                },
                 onFinish = {
                     navController.navigate(Destinations.JOURNAL) {
                         popUpTo(navController.graph.findStartDestination().id)
@@ -191,7 +194,8 @@ fun NavGraph(
 
         composable(Destinations.PROGRESS) {
             ProgressScreen(
-                onEntryClick = { logId -> navController.navigate(Destinations.logDetail(logId)) }
+                onEntryClick = { logId -> navController.navigate(Destinations.logDetail(logId)) },
+                onOpenJournal = { navController.navigate(Destinations.JOURNAL) }
             )
         }
     }

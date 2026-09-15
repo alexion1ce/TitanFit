@@ -1,5 +1,6 @@
 package com.example.fitapp.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -19,7 +20,8 @@ import androidx.room.PrimaryKey
     tableName = "set_logs",
     indices = [
         Index(value = ["logId"]),
-        Index(value = ["exerciseId"])
+        Index(value = ["exerciseId"]),
+        Index(value = ["logId", "exerciseOrder", "setNumber"])
     ],
     foreignKeys = [
         ForeignKey(
@@ -40,8 +42,11 @@ data class SetLog(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val logId: Long,
     val exerciseId: Long,
+    @ColumnInfo(defaultValue = "0") val exerciseOrder: Int = 0,
     val setNumber: Int,
     val weight: Double,
     val reps: Int,
-    val done: Boolean = false
+    val done: Boolean = false,
+    val durationSeconds: Int? = null,
+    @ColumnInfo(defaultValue = "60") val restSeconds: Int = 60
 )

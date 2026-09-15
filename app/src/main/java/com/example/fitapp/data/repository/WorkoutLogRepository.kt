@@ -1,5 +1,7 @@
 package com.example.fitapp.data.repository
 
+import androidx.room.withTransaction
+import com.example.fitapp.data.local.AppDatabase
 import com.example.fitapp.data.local.dao.SetLogDao
 import com.example.fitapp.data.local.dao.WorkoutLogDao
 import com.example.fitapp.data.local.entity.SetLog
@@ -53,11 +55,12 @@ data class RecentWorkoutSummary(
     val exerciseCount: Int,
     val durationMin: Int,
     val totalVolume: Double,
-    val caloriesEstimate: Int
+    val completedSets: Int
 )
 
 @Singleton
 class WorkoutLogRepository @Inject constructor(
+    private val db: AppDatabase,
     private val workoutLogDao: WorkoutLogDao,
     private val setLogDao: SetLogDao,
     private val workoutRepository: WorkoutRepository,
@@ -73,7 +76,12 @@ class WorkoutLogRepository @Inject constructor(
      *
      * @return id созданного лога
      */
-    suspend fun startWorkout(workoutId: Long): Long {
+    suspend fun resumeOrStartWorkout(workoutId: Long): Long = db.withTransaction {
+        workoutLogDao.getUnfinishedByWorkoutId(workoutId)?.id
+            ?: startWorkout(workoutId)
+    }
+
+    private suspend fun startWorkout(workoutId: Long): Long {
         val detail = workoutRepository.getDetail(workoutId)
             ?: throw IllegalArgumentException("Тренировка $workoutId не найдена")
 
@@ -86,23 +94,7 @@ class WorkoutLogRepository @Inject constructor(
         )
 
         // Предзаполняем подходы: для каждого упражнения по N подходов
-        val sets = mutableListOf<SetLog>()
-        for (item in detail.exercises) {
-            // Парсим целевые повторения (берём первое число из строки типа "8-12")
-            val targetReps = item.reps.substringBefore("-").trim().toIntOrNull() ?: 10
-            repeat(item.sets) { i ->
-                sets.add(
-                    SetLog(
-                        logId = logId,
-                        exerciseId = item.exerciseId,
-                        setNumber = i + 1,
-                        weight = 0.0,
-                        reps = targetReps,
-                        done = false
-                    )
-                )
-            }
-        }
+        val sets = createInitialSetLogs(logId, detail.exercises)
         setLogDao.insertAll(sets)
         return logId
     }
@@ -111,20 +103,34 @@ class WorkoutLogRepository @Inject constructor(
         setLogDao.update(setLog)
     }
 
-    suspend fun addSets(logId: Long, exerciseId: Long, count: Int) {
+    suspend fun updateSetWeight(setId: Long, weight: Double) {
+        require(weight.isFinite() && weight >= 0.0)
+        setLogDao.updateWeight(setId, weight)
+    }
+
+    suspend fun updateSetReps(setId: Long, reps: Int) {
+        require(reps > 0)
+        setLogDao.updateReps(setId, reps)
+    }
+
+    suspend fun updateSetDuration(setId: Long, seconds: Int) {
+        require(seconds > 0)
+        setLogDao.updateDuration(setId, seconds)
+    }
+
+    suspend fun updateSetDone(setId: Long, done: Boolean) = setLogDao.updateDone(setId, done)
+
+    suspend fun addSets(logId: Long, exerciseId: Long, exerciseOrder: Int, count: Int) = db.withTransaction {
         val safeCount = count.coerceIn(1, 20)
         val exerciseSets = setLogDao.getByLog(logId)
-            .filter { it.exerciseId == exerciseId }
+            .filter { it.exerciseId == exerciseId && it.exerciseOrder == exerciseOrder }
             .sortedBy { it.setNumber }
-        val lastSet = exerciseSets.lastOrNull()
-        val nextSetNumber = (lastSet?.setNumber ?: 0) + 1
+        val lastSet = requireNotNull(exerciseSets.lastOrNull()) { "Упражнение сессии не найдено" }
+        val nextSetNumber = lastSet.setNumber + 1
         val newSets = List(safeCount) { index ->
-            SetLog(
-                logId = logId,
-                exerciseId = exerciseId,
+            lastSet.copy(
+                id = 0,
                 setNumber = nextSetNumber + index,
-                weight = lastSet?.weight ?: 0.0,
-                reps = lastSet?.reps ?: 10,
                 done = false
             )
         }
@@ -132,17 +138,20 @@ class WorkoutLogRepository @Inject constructor(
     }
 
     /** Завершает тренировку: фиксирует время окончания и длительность. */
-    suspend fun finishWorkout(logId: Long): Boolean {
-        val log = workoutLogDao.getById(logId) ?: return false
+    suspend fun finishWorkout(logId: Long): Boolean = db.withTransaction {
+        val log = workoutLogDao.getById(logId) ?: return@withTransaction false
+        if (log.finishedAt != null) return@withTransaction true
         val now = System.currentTimeMillis()
         val durationMin = ((now - log.startedAt) / 60_000L).toInt()
         workoutLogDao.update(
             log.copy(
                 finishedAt = now,
-                durationMin = durationMin
+                durationMin = durationMin.coerceAtLeast(0),
+                restTimerTotalSeconds = null,
+                restTimerEndsAt = null
             )
         )
-        return true
+        true
     }
 
     suspend fun deleteLog(logId: Long) {
@@ -169,19 +178,19 @@ class WorkoutLogRepository @Inject constructor(
         val muscles = muscleGroupRepository.getAll().associateBy { it.code }
 
         // Группируем подходы по упражнению
-        val rows = sets.groupBy { it.exerciseId }
-            .toSortedMap(compareBy { id -> exercises[id]?.name ?: "" })
-            .map { (exId, exSets) ->
-                val ex = exercises[exId]
-                LoggedExerciseRow(
-                    exerciseId = exId,
-                    exerciseName = ex?.name ?: "Удалённое упражнение",
-                    muscleEmoji = ex?.primaryMuscleCode?.let { muscles[it]?.emoji } ?: "🏋️",
-                    sets = exSets.sortedBy { it.setNumber },
-                    topWeight = exSets.maxOf { it.weight },
-                    totalVolume = exSets.sumOf { it.weight * it.reps }
-                )
-            }
+        val rows = groupSetLogsInWorkoutOrder(sets).map { exSets ->
+            val exId = exSets.first().exerciseId
+            val ex = exercises[exId]
+            val completedSets = exSets.filter { it.done }
+            LoggedExerciseRow(
+                exerciseId = exId,
+                exerciseName = ex?.name ?: "Удалённое упражнение",
+                muscleEmoji = ex?.primaryMuscleCode?.let { muscles[it]?.emoji } ?: "🏋️",
+                sets = exSets,
+                topWeight = completedSets.filter { it.durationSeconds == null }.maxOfOrNull { it.weight } ?: 0.0,
+                totalVolume = completedSets.sumOf { it.trainingVolume() }
+            )
+        }
 
         return WorkoutLogDetail(
             log = log,
@@ -204,7 +213,7 @@ class WorkoutLogRepository @Inject constructor(
             val completedSets = setLogDao.getByLog(log.id).filter { it.done }
             val totalVolume = completedSets
                 .asSequence()
-                .sumOf { it.weight * it.reps }
+                .sumOf { it.trainingVolume() }
             CompletedWorkoutVolume(
                 finishedAt = finishedAt,
                 totalVolume = totalVolume,
@@ -227,7 +236,7 @@ class WorkoutLogRepository @Inject constructor(
         if (logs.isEmpty()) return emptyList()
 
         val logById = logs.associateBy { it.id }
-        val allSets = logs.flatMap { log -> setLogDao.getByLog(log.id).filter { it.done } }
+        val allSets = logs.flatMap { log -> setLogDao.getByLog(log.id).filter { it.done && it.durationSeconds == null && it.weight > 0 } }
         if (allSets.isEmpty()) return emptyList()
 
         val exerciseIds = allSets.map { it.exerciseId }.distinct()
@@ -261,46 +270,22 @@ class WorkoutLogRepository @Inject constructor(
 
         return logs.map { log ->
             val doneSets = setLogDao.getByLog(log.id).filter { it.done }
-            val volume = doneSets.sumOf { it.weight * it.reps }
+            val volume = doneSets.sumOf { it.trainingVolume() }
             RecentWorkoutSummary(
                 logId = log.id,
                 workoutName = log.workoutName,
                 exerciseCount = doneSets.map { it.exerciseId }.distinct().size,
                 durationMin = log.durationMin ?: 0,
                 totalVolume = volume,
-                caloriesEstimate = (volume * 0.08).toInt().coerceAtLeast(0)
+                completedSets = doneSets.size
             )
         }
     }
 
     /** Общая статистика для шапки экрана прогресса. */
-    suspend fun getOverallStats(): OverallStats {
+    suspend fun getOverallStats(weeksCount: Int? = null): OverallStats {
         val logs = workoutLogDao.getAllFinished()
-        if (logs.isEmpty()) return OverallStats(0, 0, 0.0, 0, 0)
-
-        val logById = logs.associateBy { it.id }
-        val allLogsSets = logs.flatMap { log -> setLogDao.getByLog(log.id) }
-        val doneSets = allLogsSets.filter { it.done }
-        val totalVolume = doneSets.sumOf { it.weight * it.reps }
-        val totalMinutes = logs.sumOf { it.durationMin ?: 0 }
-        val completionRate = if (allLogsSets.isNotEmpty()) {
-            ((doneSets.size.toDouble() / allLogsSets.size) * 100).toInt().coerceIn(0, 100)
-        } else 0
-
-        return OverallStats(
-            totalWorkouts = logs.size,
-            totalSets = doneSets.size,
-            totalVolume = totalVolume,
-            totalMinutes = totalMinutes,
-            completionRate = completionRate
-        )
+        val sets = logs.flatMap { setLogDao.getByLog(it.id) }
+        return calculateOverallStats(logs, sets, weeksCount, Instant.now(), ZoneId.systemDefault())
     }
 }
-
-data class OverallStats(
-    val totalWorkouts: Int,
-    val totalSets: Int,
-    val totalVolume: Double,
-    val totalMinutes: Int,
-    val completionRate: Int = 0
-)

@@ -30,8 +30,8 @@ import com.example.fitapp.data.local.entity.WorkoutLog
         WorkoutLog::class,
         SetLog::class
     ],
-    version = 4,
-    exportSchema = false
+    version = 6,
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 

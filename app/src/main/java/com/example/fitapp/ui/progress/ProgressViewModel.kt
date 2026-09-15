@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -18,6 +20,8 @@ class ProgressViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ProgressUiState())
     val uiState: StateFlow<ProgressUiState> = _uiState.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         load()
     }
@@ -26,17 +30,23 @@ class ProgressViewModel @Inject constructor(
         load()
     }
 
+
+
     private fun load() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             val current = _uiState.value
             try {
                 _uiState.value = current.copy(
                     isLoading = false,
-                    stats = workoutLogRepository.getOverallStats(),
+                    errorMessage = null,
+                    stats = workoutLogRepository.getOverallStats(current.selectedPeriod.weeksCount),
                     weeklyVolume = workoutLogRepository.getWeeklyVolume(current.selectedPeriod.weeksCount),
                     recentWorkouts = workoutLogRepository.getRecentWorkoutSummaries(20),
                     records = workoutLogRepository.getPersonalRecords()
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = current.copy(
                     isLoading = false,
@@ -61,6 +71,7 @@ class ProgressViewModel @Inject constructor(
     }
 
     fun resetProgress() {
+        loadJob?.cancel()
         viewModelScope.launch {
             val current = _uiState.value
             _uiState.value = current.copy(isResetting = true, errorMessage = null)
@@ -70,6 +81,8 @@ class ProgressViewModel @Inject constructor(
                     isLoading = false,
                     selectedPeriod = current.selectedPeriod
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = current.copy(
                     isResetting = false,

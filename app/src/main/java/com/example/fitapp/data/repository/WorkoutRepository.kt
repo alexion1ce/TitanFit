@@ -22,6 +22,7 @@ data class WorkoutExerciseItem(
     val workoutExerciseId: Long,
     val exerciseId: Long,
     val exerciseCode: String = "",
+    val equipmentCode: String = "",
     val exerciseName: String,
     val muscleName: String,
     val muscleEmoji: String,
@@ -81,6 +82,7 @@ class WorkoutRepository @Inject constructor(
                     workoutExerciseId = we.id,
                     exerciseId = we.exerciseId,
                     exerciseCode = ex?.code.orEmpty(),
+                    equipmentCode = ex?.equipmentCode.orEmpty(),
                     exerciseName = ex?.name ?: "Удалённое упражнение",
                     muscleName = ex?.primaryMuscleCode?.let { muscleNames[it] } ?: "—",
                     muscleEmoji = ex?.primaryMuscleCode?.let { muscleEmojis[it] } ?: "🏋️",
@@ -110,6 +112,10 @@ class WorkoutRepository @Inject constructor(
      * [items] содержит exerciseId и параметры подходов; order рассчитывается по позиции.
      */
     suspend fun saveExercises(workoutId: Long, items: List<WorkoutExerciseItem>) {
+        require(items.isNotEmpty()) { "Добавьте хотя бы одно упражнение" }
+        require(items.all { it.sets in 1..100 && it.restSeconds in 0..3600 && parseTargetCount(it.reps) != null }) {
+            "Проверьте подходы, повторения и отдых"
+        }
         val entities = items.mapIndexed { index, item ->
             WorkoutExercise(
                 workoutId = workoutId,
@@ -144,5 +150,6 @@ class WorkoutRepository @Inject constructor(
         workoutDao.update(workout.copy(name = name, notes = notes))
     }
 
-    suspend fun deleteWorkout(id: Long) = workoutDao.deleteById(id)
+    // A template's deletion must never delete the user's workout history.
+    suspend fun deleteWorkout(id: Long) = workoutDao.archiveById(id)
 }

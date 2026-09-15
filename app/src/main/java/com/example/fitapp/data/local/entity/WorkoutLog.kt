@@ -30,5 +30,7 @@ data class WorkoutLog(
     val workoutName: String,
     val startedAt: Long,
     val finishedAt: Long? = null,
-    val durationMin: Int? = null
+    val durationMin: Int? = null,
+    val restTimerTotalSeconds: Int? = null,
+    val restTimerEndsAt: Long? = null
 )

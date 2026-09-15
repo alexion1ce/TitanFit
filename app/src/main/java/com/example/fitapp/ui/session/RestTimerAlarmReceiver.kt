@@ -7,7 +7,7 @@ import android.content.Intent
 class RestTimerAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == RestTimerNotifications.ACTION_REST_TIMER_FINISHED) {
-            RestTimerNotifications.showFinishedNotification(context)
+            RestTimerNotifications.showFinishedNotification(context, intent.getLongExtra("deadline", 0))
         }
     }
 }

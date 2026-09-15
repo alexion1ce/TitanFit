@@ -30,6 +30,12 @@ interface WorkoutLogDao {
     @Update
     suspend fun update(log: WorkoutLog)
 
+    @Query(
+        "UPDATE workout_logs SET restTimerTotalSeconds = :totalSeconds, " +
+            "restTimerEndsAt = :endsAt WHERE id = :logId"
+    )
+    suspend fun updateRestTimer(logId: Long, totalSeconds: Int?, endsAt: Long?)
+
     @Query("DELETE FROM workout_logs WHERE id = :id")
     suspend fun deleteById(id: Long)
 

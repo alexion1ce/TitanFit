@@ -15,14 +15,14 @@ import kotlinx.coroutines.flow.Flow
 interface WorkoutDao {
 
     /** Все тренировки заданного типа. */
-    @Query("SELECT * FROM workouts WHERE type = :type ORDER BY name")
+    @Query("SELECT * FROM workouts WHERE type = :type AND isArchived = 0 ORDER BY name")
     fun observeByType(type: String): Flow<List<Workout>>
 
-    @Query("SELECT COUNT(*) FROM workouts WHERE type = :type")
+    @Query("SELECT COUNT(*) FROM workouts WHERE type = :type AND isArchived = 0")
     suspend fun countByType(type: String): Int
 
     /** Кол-во пресетов (для проверки первичного наполнения). */
-    @Query("SELECT COUNT(*) FROM workouts WHERE type = 'PRESET'")
+    @Query("SELECT COUNT(*) FROM workouts WHERE type = 'PRESET' AND isArchived = 0")
     suspend fun countPresets(): Int
 
     @Query("SELECT * FROM workouts WHERE id = :id")
@@ -32,18 +32,15 @@ interface WorkoutDao {
     @Query("SELECT * FROM workouts WHERE id = :id")
     suspend fun getWithExercises(id: Long): WorkoutWithExercises?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(workout: Workout): Long
 
     @Update
     suspend fun update(workout: Workout)
 
-    @Delete
-    suspend fun delete(workout: Workout)
+    @Query("UPDATE workouts SET isArchived = 1 WHERE id = :id")
+    suspend fun archiveById(id: Long)
 
-    @Query("DELETE FROM workouts WHERE id = :id")
-    suspend fun deleteById(id: Long)
-
-    @Query("DELETE FROM workouts WHERE type = 'PRESET'")
-    suspend fun deletePresets()
+    @Query("SELECT * FROM workouts WHERE type = 'PRESET' AND (presetCode = :code OR (presetCode IS NULL AND name = :legacyName)) ORDER BY presetCode IS NULL, id LIMIT 1")
+    suspend fun getPreset(code: String, legacyName: String): Workout?
 }

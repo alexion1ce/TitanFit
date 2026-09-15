@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ExerciseDao {
 
-    @Query("SELECT * FROM exercises ORDER BY name")
+    @Query("SELECT * FROM exercises WHERE isArchived = 0 ORDER BY name")
     fun observeAll(): Flow<List<Exercise>>
 
     /**
@@ -20,7 +20,7 @@ interface ExerciseDao {
     @Query(
         """
         SELECT * FROM exercises
-        WHERE (:muscleCode IS NULL OR primaryMuscleCode = :muscleCode OR secondaryMuscleCode = :muscleCode)
+        WHERE isArchived = 0 AND (:muscleCode IS NULL OR primaryMuscleCode = :muscleCode OR secondaryMuscleCode = :muscleCode)
           AND (:equipmentCode IS NULL OR equipmentCode = :equipmentCode)
           AND (:difficulty IS NULL OR difficulty = :difficulty)
         ORDER BY name
@@ -38,7 +38,7 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercises WHERE id IN (:ids)")
     suspend fun getByIds(ids: List<Long>): List<Exercise>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertAll(items: List<Exercise>)
 
     /** Все упражнения с id и кодом — для сопоставления пресетов. */
@@ -48,10 +48,10 @@ interface ExerciseDao {
     @Query("SELECT code FROM exercises")
     suspend fun getExistingCodes(): List<String>
 
-    @Query("DELETE FROM exercises WHERE code IN (:codes)")
-    suspend fun deleteByCodes(codes: List<String>)
+    @Query("UPDATE exercises SET isArchived = 1 WHERE code IN (:codes) AND isArchived = 0")
+    suspend fun archiveByCodes(codes: List<String>)
 
-    @Query("UPDATE exercises SET name = :name WHERE code = :code")
+    @Query("UPDATE exercises SET name = :name WHERE code = :code AND name != :name")
     suspend fun updateNameByCode(code: String, name: String)
 
     @Query("SELECT COUNT(*) FROM exercises")

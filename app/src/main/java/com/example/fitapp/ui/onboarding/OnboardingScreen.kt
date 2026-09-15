@@ -201,7 +201,7 @@ private fun Step1Bio(state: OnboardingUiState, viewModel: OnboardingViewModel) {
         item {
             StepHeader(
                 title = "Ваши параметры",
-                subtitle = "Эти данные помогут рассчитать суточную норму калорий и ИМТ"
+                subtitle = "Эти данные помогут оценить ориентировочную суточную калорийность и ИМТ"
             )
         }
         item {
@@ -419,7 +419,7 @@ private fun Step6PlanGeneration(state: OnboardingUiState) {
         Spacer(Modifier.height(28.dp))
 
         Text(
-            "Формирование вашего плана...",
+            "Подбор готовых программ...",
             color = TextPrimary,
             fontWeight = FontWeight.Bold,
             fontSize = 22.sp,
@@ -465,8 +465,8 @@ private fun Step7Result(
     ) {
         item {
             StepHeader(
-                title = "Ваш персональный план готов!",
-                subtitle = "Мы рассчитали идеальную норму питания и подобрали комплекс"
+                title = "Готовые программы для вас",
+                subtitle = "Показаны готовые тренировки для выбранного оборудования. Цель, опыт и расписание сохраняются в профиле; сами программы пока не адаптируются."
             )
         }
 
@@ -490,6 +490,9 @@ private fun Step7Result(
                 }
             }
         } else {
+            if (state.recommendedPrograms.isEmpty()) {
+                item { Text(state.errorMessage ?: "Подходящих готовых программ нет. Создайте свою тренировку или измените оборудование.", color = TextSecondary) }
+            }
             items(state.recommendedPrograms, key = { it.workout.id }) { card ->
                 RecommendedProgramCard(
                     program = card,
@@ -763,6 +766,12 @@ private fun TargetCaloriesCard(targetCalories: Int, bmr: Int) {
                 Text("Целевой суточный калораж", color = TextSecondary, fontSize = 13.sp)
                 Text("$targetCalories ккал / день", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                 Text("Базовый метаболизм (BMR): $bmr ккал", color = AccentTeal, fontSize = 12.sp)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Ориентировочный расчёт, не медицинское назначение.",
+                    color = TextSecondary,
+                    fontSize = 11.sp
+                )
             }
         }
     }
@@ -793,7 +802,7 @@ private fun RecommendedProgramCard(program: ProgramCard, selected: Boolean, onCl
             }
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(program.workout.name, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(program.workout.name, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text("${program.exerciseCount} упражнений • ${program.totalSets} подходов", color = TextSecondary, fontSize = 13.sp)
             }
             if (selected) {

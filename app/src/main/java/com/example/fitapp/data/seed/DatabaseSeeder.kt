@@ -869,6 +869,30 @@ object DatabaseSeeder {
             technique = "Не раскачивайтесь, задерживайтесь на секунду в разведении."
         ),
         Exercise(
+            code = "bodyweight_lunge",
+            name = "Выпады со своим весом",
+            description = "Выпады без отягощения для мышц ног и ягодиц.",
+            primaryMuscleCode = "legs",
+            secondaryMuscleCode = "glutes",
+            equipmentCode = "bodyweight",
+            difficulty = "BEGINNER",
+            imageUrl = null,
+            videoUrl = null,
+            technique = "Встаньте прямо, сделайте шаг вперёд и плавно согните колени. Переднее колено направляйте по носку, корпус сохраняйте устойчивым. Оттолкнитесь передней ногой и вернитесь в исходное положение. Повторите другой ногой."
+        ),
+        Exercise(
+            code = "dumbbell_romanian_deadlift",
+            name = "Румынская тяга с гантелями",
+            description = "Наклон с гантелями вдоль передней поверхности ног. Таз отводится назад, колени слегка согнуты.",
+            primaryMuscleCode = "legs",
+            secondaryMuscleCode = "glutes",
+            equipmentCode = "dumbbell",
+            difficulty = "INTERMEDIATE",
+            imageUrl = null,
+            videoUrl = null,
+            technique = "Держите гантели близко к ногам. Отводите таз назад, сохраняя нейтральную спину; опускайтесь до комфортного натяжения задней поверхности бедра. Поднимайтесь без рывка и переразгибания поясницы."
+        ),
+        Exercise(
             code = "sumo_deadlift",
             name = "Становая тяга сумо",
             description = "Вариант становой с широкой постановкой ног и акцентом на ягодицы/приводящие.",

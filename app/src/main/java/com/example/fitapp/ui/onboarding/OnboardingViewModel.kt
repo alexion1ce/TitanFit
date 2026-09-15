@@ -8,12 +8,13 @@ import com.example.fitapp.data.local.entity.Gender
 import com.example.fitapp.data.local.entity.MuscleFocus
 import com.example.fitapp.data.local.entity.PreferredDuration
 import com.example.fitapp.data.local.entity.WorkoutLocation
+import com.example.fitapp.data.repository.isProgramCompatible
 import com.example.fitapp.data.repository.DatabaseInitializer
 import com.example.fitapp.data.repository.UserProfileRepository
 import com.example.fitapp.data.repository.WorkoutRepository
 import com.example.fitapp.ui.programs.ProgramCard
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +35,6 @@ class OnboardingViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             databaseInitializer.initializeIfNeeded()
-            calculateRecommendations()
         }
         val existing = userProfileRepository.loadProfile()
         _uiState.value = _uiState.value.copy(
@@ -110,33 +110,22 @@ class OnboardingViewModel @Inject constructor(
 
     private fun startPlanGenerationAnimation() {
         viewModelScope.launch {
-            val messages = listOf(
-                "Анализ биометрии и нормы калорий...",
-                "Фильтрация имеющегося снаряжения...",
-                "Учет акцентных мышечных групп...",
-                "Формирование оптимальных дневных сплитов...",
-                "Персональный план успешно сформирован!"
+            _uiState.value = _uiState.value.copy(
+                generationProgress = 0f,
+                generationMessage = "Проверка оборудования в готовых тренировках..."
             )
-            for (i in messages.indices) {
-                val progress = (i + 1) / messages.size.toFloat()
-                _uiState.value = _uiState.value.copy(
-                    generationProgress = progress,
-                    generationMessage = messages[i]
-                )
-                delay(350)
-            }
-            delay(200)
             calculateRecommendations()
             _uiState.value = _uiState.value.copy(
+                generationProgress = 1f,
                 currentStep = 7,
                 isGeneratingPlan = false
             )
         }
     }
 
-    private fun calculateRecommendations() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+    private suspend fun calculateRecommendations() {
+        run {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
                 val presets = workoutRepository.observePresets().first()
                 val cards = presets.map { w ->
@@ -148,37 +137,8 @@ class OnboardingViewModel @Inject constructor(
                         exercises = detail?.exercises.orEmpty()
                     )
                 }
-                val isHome = _uiState.value.location != WorkoutLocation.GYM
-                val isDumbbells = _uiState.value.location == WorkoutLocation.HOME_DUMBBELLS
-                val focus = _uiState.value.focus
-
-                val filtered: List<ProgramCard> = cards.sortedByDescending { card ->
-                    var score = 0
-                    val name = card.workout.name.lowercase()
-
-                    if (isHome) {
-                        if (isDumbbells) {
-                            if (name.contains("гантел")) score += 10
-                            if (name.contains("свой вес")) score += 3
-                        } else {
-                            if (name.contains("свой вес")) score += 10
-                        }
-                    } else {
-                        if (!name.contains("дом")) score += 8
-                        if (_uiState.value.experience == ExperienceLevel.BEGINNER && name.contains("full body")) score += 6
-                        if (_uiState.value.experience != ExperienceLevel.BEGINNER && (name.contains("ppl") || name.contains("upper"))) score += 6
-                    }
-
-                    // Акцентные группы мышц
-                    when (focus) {
-                        MuscleFocus.ARM_CHEST -> if (name.contains("push") || name.contains("верх")) score += 4
-                        MuscleFocus.LEGS_GLUTES -> if (name.contains("legs") || name.contains("низ")) score += 4
-                        MuscleFocus.UPPER_BODY -> if (name.contains("upper") || name.contains("push") || name.contains("pull")) score += 4
-                        MuscleFocus.CORE_ABS -> if (name.contains("кор") || name.contains("full body")) score += 4
-                        MuscleFocus.FULL_BODY -> if (name.contains("full body")) score += 4
-                    }
-
-                    score
+                val filtered = cards.filter { card ->
+                    isProgramCompatible(card.exercises.map { it.equipmentCode }, _uiState.value.location)
                 }
 
                 _uiState.value = _uiState.value.copy(
@@ -186,8 +146,10 @@ class OnboardingViewModel @Inject constructor(
                     recommendedPrograms = filtered,
                     selectedProgramId = filtered.firstOrNull()?.workout?.id
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(isLoading = false, selectedProgramId = null, recommendedPrograms = emptyList(), errorMessage = "Не удалось загрузить программы. Вернитесь назад и повторите подбор.")
             }
         }
     }

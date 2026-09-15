@@ -87,6 +87,7 @@ private val Muted = Color(0xFFC1C5CF)
 @Composable
 fun ProgressScreen(
     onEntryClick: (Long) -> Unit = {},
+    onOpenJournal: () -> Unit = {},
     viewModel: ProgressViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -132,17 +133,12 @@ fun ProgressScreen(
                 body = state.errorMessage ?: "Попробуйте открыть экран позже"
             )
 
-            state.stats.totalWorkouts == 0 -> CenterMessage(
-                title = "Нет данных для прогресса",
-                body = "Завершите тренировку, чтобы увидеть статистику"
-            )
-
             else -> ProgressContent(
                 state = state,
                 onEntryClick = onEntryClick,
                 onResetClick = { showResetDialog = true },
                 onPeriodSelected = viewModel::onPeriodSelected,
-                onToggleRecent = viewModel::toggleAllRecent,
+                onOpenJournal = onOpenJournal,
                 onToggleRecords = viewModel::toggleAllRecords
             )
         }
@@ -179,10 +175,10 @@ private fun ProgressContent(
     onEntryClick: (Long) -> Unit,
     onResetClick: () -> Unit,
     onPeriodSelected: (ProgressPeriod) -> Unit,
-    onToggleRecent: () -> Unit,
+    onOpenJournal: () -> Unit,
     onToggleRecords: () -> Unit
 ) {
-    val visibleRecent = if (state.showAllRecent) state.recentWorkouts else state.recentWorkouts.take(3)
+    val visibleRecent = state.recentWorkouts.take(3)
     val visibleRecords = if (state.showAllRecords) state.records else state.records.take(2)
 
     LazyColumn(
@@ -197,17 +193,13 @@ private fun ProgressContent(
                 weekly = state.weeklyVolume,
                 totalVolume = state.stats.totalVolume,
                 totalWorkouts = state.stats.totalWorkouts,
+                totalSets = state.stats.totalSets,
                 totalMinutes = state.stats.totalMinutes
             )
         }
+        item { SectionTitle("Журнал тренировок", "См. все", onOpenJournal) }
         if (visibleRecent.isNotEmpty()) {
-            item {
-                SectionTitle(
-                    title = "Последние тренировки",
-                    action = if (state.showAllRecent) "Скрыть" else "См. все",
-                    onAction = onToggleRecent
-                )
-            }
+
             items(visibleRecent, key = { it.logId }) { workout ->
                 RecentWorkoutRow(workout, onClick = { onEntryClick(workout.logId) })
             }
@@ -215,7 +207,7 @@ private fun ProgressContent(
         if (visibleRecords.isNotEmpty()) {
             item {
                 SectionTitle(
-                    title = "Личные рекорды",
+                    title = "Рекорды за всё время",
                     action = if (state.showAllRecords) "Скрыть" else "См. все",
                     onAction = onToggleRecords
                 )
@@ -297,6 +289,7 @@ private fun VolumeAnalyticsCard(
     weekly: List<WeeklyVolume>,
     totalVolume: Double,
     totalWorkouts: Int,
+    totalSets: Int,
     totalMinutes: Int
 ) {
     Surface(
@@ -338,7 +331,7 @@ private fun VolumeAnalyticsCard(
             AnalyticsStatsRow(
                 totalVolume = totalVolume,
                 totalWorkouts = totalWorkouts,
-                calories = (totalVolume * 0.08).toInt(),
+                totalSets = totalSets,
                 totalMinutes = totalMinutes
             )
         }
@@ -417,7 +410,7 @@ private fun WeeklyVolumeChart(weekly: List<WeeklyVolume>) {
 private fun AnalyticsStatsRow(
     totalVolume: Double,
     totalWorkouts: Int,
-    calories: Int,
+    totalSets: Int,
     totalMinutes: Int
 ) {
     Surface(
@@ -433,7 +426,7 @@ private fun AnalyticsStatsRow(
         ) {
             AnalyticsMetric(Icons.Outlined.Scale, formatNumber(totalVolume), "Объем (кг)", AccentRedDark)
             AnalyticsMetric(Icons.Outlined.FitnessCenter, totalWorkouts.toString(), "Тренировок", Color(0xFFF28B1D))
-            AnalyticsMetric(Icons.Outlined.LocalFireDepartment, calories.toString(), "Ккал", AccentRed)
+            AnalyticsMetric(Icons.Outlined.FitnessCenter, totalSets.toString(), "Подходов", AccentRed)
             AnalyticsMetric(Icons.Outlined.Timer, formatDuration(totalMinutes), "Длительность", Color(0xFF24BFA3))
         }
     }
@@ -503,7 +496,7 @@ private fun RecentWorkoutRow(workout: RecentWorkoutSummary, onClick: () -> Unit)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text("${formatNumber(workout.totalVolume)} кг", color = Ink, fontWeight = FontWeight.Medium)
-                Text("${workout.caloriesEstimate} ккал", color = Muted, fontSize = 13.sp)
+                Text("${workout.completedSets} подходов", color = Muted, fontSize = 13.sp)
             }
             Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Muted)
         }
@@ -578,20 +571,7 @@ private fun DarkKpiCard(icon: ImageVector, value: String, label: String, accent:
                 Text(value, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             }
             Text(label, color = Color.White.copy(alpha = 0.86f), fontSize = 12.sp)
-            Spacer(Modifier.height(10.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(5.dp)
-                    .background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(8.dp))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(if (value.endsWith("%")) 0.85f else 0.7f)
-                        .height(5.dp)
-                        .background(accent, RoundedCornerShape(8.dp))
-                )
-            }
+
         }
     }
 }

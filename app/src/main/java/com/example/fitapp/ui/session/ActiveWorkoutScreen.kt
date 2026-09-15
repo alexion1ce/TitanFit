@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,6 +46,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,14 +59,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.local.entity.SetLog
+import com.example.fitapp.data.repository.calculateWorkoutProgress
+import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,9 +79,21 @@ import kotlinx.coroutines.delay
 fun ActiveWorkoutScreen(
     onBack: () -> Unit,
     onFinish: () -> Unit,
+    onOpenTechnique: (Long) -> Unit,
     viewModel: ActiveWorkoutViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.setForeground(true)
+            if (event == Lifecycle.Event.ON_PAUSE) viewModel.setForeground(false)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        viewModel.setForeground(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+        onDispose { viewModel.setForeground(false); lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var showFinishDialog by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
     var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -90,7 +114,11 @@ fun ActiveWorkoutScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(state.workoutName.ifBlank { "Тренировка" }, maxLines = 1)
+                        Text(
+                            state.workoutName.ifBlank { "Тренировка" },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         if (state.startedAt > 0L && !state.isLoading) {
                             Text(
                                 text = formatElapsedTime(nowMillis - state.startedAt),
@@ -130,6 +158,7 @@ fun ActiveWorkoutScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .imePadding()
             ) {
                 LazyColumn(
                     contentPadding = PaddingValues(
@@ -141,25 +170,37 @@ fun ActiveWorkoutScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
+                        if (state.saveError != null) {
+                            Text(state.saveError!!, color = MaterialTheme.colorScheme.error)
+                            TextButton(onClick = viewModel::retrySave) { Text("Повторить сохранение") }
+                        } else if (state.isSaving) Text("Сохранение…")
+                        if (state.restTimer.isActive && state.timerNotice != null) {
+                            Text(state.timerNotice!!, style = MaterialTheme.typography.bodySmall)
+                            TextButton(onClick = { RestTimerNotifications.openSignalSettings(context) }) { Text("Настройки сигнала") }
+                        }
                         WorkoutSummaryCard(
                             groups = state.groups,
                             elapsedMillis = nowMillis - state.startedAt
                         )
                     }
 
-                    items(state.groups, key = { it.exerciseId }) { group ->
+                    items(state.groups, key = { "${it.exerciseOrder}:${it.exerciseId}" }) { group ->
                         ExerciseGroupCard(
                             group = group,
                             onToggleSet = viewModel::toggleSetDone,
-                            onWeightChange = viewModel::onWeightChanged,
-                            onRepsChange = viewModel::onRepsChanged,
-                            onAddSets = viewModel::addSets
+                            drafts = state.drafts,
+                            enabled = !state.isClosing,
+                            onWeightChange = viewModel::onWeightTextChanged,
+                            onRepsChange = viewModel::onCountTextChanged,
+                            onAddSets = viewModel::addSets,
+                            onOpenTechnique = { onOpenTechnique(group.exerciseId) }
                         )
                     }
 
                     item {
                         Button(
                             onClick = { showFinishDialog = true },
+                            enabled = !state.isClosing,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.tertiary,
@@ -251,13 +292,7 @@ private fun WorkoutSummaryCard(
     groups: List<ExerciseSetGroup>,
     elapsedMillis: Long
 ) {
-    val realTotalSets = groups.sumOf { it.sets.size }
-    val totalSets = realTotalSets.coerceAtLeast(1)
-    val doneSets = groups.sumOf { group -> group.sets.count { it.done } }
-    val volume = groups.sumOf { group ->
-        group.sets.filter { it.done }.sumOf { it.weight * it.reps }
-    }
-    val progress = doneSets.toFloat() / totalSets.toFloat()
+    val progress = calculateWorkoutProgress(groups.flatMap { it.sets })
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -271,19 +306,19 @@ private fun WorkoutSummaryCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Прогресс", style = MaterialTheme.typography.labelMedium)
                     Text(
-                        "$doneSets/$realTotalSets подходов",
+                        "${progress.doneSets}/${progress.totalSets} подходов",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(formatElapsedTime(elapsedMillis), style = MaterialTheme.typography.titleMedium)
-                    Text("${formatWeight(volume)} кг·повт.", style = MaterialTheme.typography.labelMedium)
+                    Text("${formatWeight(progress.completedVolume)} кг·повт.", style = MaterialTheme.typography.labelMedium)
                 }
             }
             Spacer(Modifier.height(10.dp))
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { progress.fraction },
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.16f)
@@ -296,9 +331,12 @@ private fun WorkoutSummaryCard(
 private fun ExerciseGroupCard(
     group: ExerciseSetGroup,
     onToggleSet: (SetLog) -> Unit,
-    onWeightChange: (SetLog, Double) -> Unit,
-    onRepsChange: (SetLog, Int) -> Unit,
-    onAddSets: (Long, Int) -> Unit
+    drafts: Map<Long, SetInputDraft>,
+    enabled: Boolean,
+    onWeightChange: (SetLog, String) -> Unit,
+    onRepsChange: (SetLog, String) -> Unit,
+    onAddSets: (Long, Int, Int) -> Unit,
+    onOpenTechnique: () -> Unit
 ) {
     val completedSets = group.sets.count { it.done }
     var showAddSetsDialog by remember { mutableStateOf(false) }
@@ -310,7 +348,12 @@ private fun ExerciseGroupCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(group.muscleEmoji, style = MaterialTheme.typography.headlineMedium)
+                ExerciseArtworkThumbnail(
+                    exerciseCode = group.exerciseCode,
+                    primaryMuscleCode = group.primaryMuscleCode,
+                    secondaryMuscleCode = group.secondaryMuscleCode,
+                    modifier = Modifier.size(52.dp)
+                )
                 Spacer(Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -326,6 +369,18 @@ private fun ExerciseGroupCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                IconButton(onClick = onOpenTechnique) {
+                    Icon(Icons.Outlined.Info, contentDescription = "Открыть технику")
+                }
+            }
+
+            if (group.equipmentCode == "barbell" && group.sets.none { it.weight > 0.0 }) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Олимпийский гриф обычно весит 20 кг. Укажите фактический общий вес; где применимо, можно оставить 0 кг.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Spacer(Modifier.height(8.dp))
@@ -333,6 +388,8 @@ private fun ExerciseGroupCard(
             group.sets.forEach { setLog ->
                 SetRow(
                     setLog = setLog,
+                    draft = drafts[setLog.id] ?: SetInputDraft.from(setLog),
+                    enabled = enabled,
                     onToggle = { onToggleSet(setLog) },
                     onWeightChange = { onWeightChange(setLog, it) },
                     onRepsChange = { onRepsChange(setLog, it) }
@@ -342,6 +399,7 @@ private fun ExerciseGroupCard(
 
             OutlinedButton(
                 onClick = { showAddSetsDialog = true },
+                enabled = enabled,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -356,7 +414,7 @@ private fun ExerciseGroupCard(
             exerciseName = group.exerciseName,
             onDismiss = { showAddSetsDialog = false },
             onConfirm = { count ->
-                onAddSets(group.exerciseId, count)
+                onAddSets(group.exerciseId, group.exerciseOrder, count)
                 showAddSetsDialog = false
             }
         )
@@ -433,85 +491,75 @@ private fun AddSetsDialog(
 @Composable
 private fun SetRow(
     setLog: SetLog,
+    draft: SetInputDraft,
+    enabled: Boolean,
     onToggle: () -> Unit,
-    onWeightChange: (Double) -> Unit,
-    onRepsChange: (Int) -> Unit
+    onWeightChange: (String) -> Unit,
+    onRepsChange: (String) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
-
+    val timed = setLog.durationSeconds != null
+    val count = parseSetCount(draft.count)
+    val weight = parseSetWeight(draft.weight)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = if (setLog.done) {
-            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
-        } else {
-            MaterialTheme.colorScheme.surface
-        },
-        tonalElevation = if (setLog.done) 1.dp else 0.dp
+        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+        color = if (setLog.done) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
+            else MaterialTheme.colorScheme.surface
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
+        Column(Modifier.padding(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Подход ${setLog.setNumber}",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        if (setLog.done) "Выполнен" else "Вес и повторы можно менять кнопками",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    if (setLog.done) "Подход ${setLog.setNumber} · " +
+                        (if (timed) "${setLog.durationSeconds} с" else "${formatWeight(setLog.weight)} кг × ${setLog.reps}")
+                    else "Подход ${setLog.setNumber}",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f)
+                )
                 FilledTonalButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onToggle()
-                    }
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(if (setLog.done) "Снять" else "Готово")
-                }
+                    enabled = enabled && (setLog.done || draft.isValid(timed)),
+                    onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onToggle() }
+                ) { Text(if (setLog.done) "Отменить" else "Выполнить") }
             }
-
-            Spacer(Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                MetricStepper(
-                    title = "Вес",
-                    minusEnabled = setLog.weight > 0.0,
-                    onMinus = { onWeightChange((setLog.weight - 2.5).coerceAtLeast(0.0)) },
-                    onPlus = { onWeightChange(setLog.weight + 2.5) },
-                    field = {
-                        WeightField(
-                            value = setLog.weight,
-                            onValueChange = onWeightChange,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-                MetricStepper(
-                    title = "Повт.",
-                    minusEnabled = setLog.reps > 0,
-                    onMinus = { onRepsChange((setLog.reps - 1).coerceAtLeast(0)) },
-                    onPlus = { onRepsChange(setLog.reps + 1) },
-                    field = {
-                        RepsField(
-                            value = setLog.reps,
-                            onValueChange = onRepsChange,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    },
-                    modifier = Modifier.weight(1f)
-                )
+            if (!setLog.done) {
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (!timed) MetricStepper(
+                        title = "Вес",
+                        minusEnabled = enabled && weight != null && weight > 0,
+                        onMinus = { onWeightChange(((weight ?: 0.0) - 2.5).coerceAtLeast(0.0).toString()) },
+                        onPlus = { if (enabled) onWeightChange(((weight ?: 0.0) + 2.5).toString()) },
+                        field = { SetInputField(draft.weight, onWeightChange, weight == null, enabled, "кг", true) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricStepper(
+                        title = if (timed) "Длительность" else "Повт.",
+                        minusEnabled = enabled && count != null && count > 1,
+                        onMinus = { onRepsChange(((count ?: 1) - 1).coerceAtLeast(1).toString()) },
+                        onPlus = { if (enabled && (count ?: 0) < Int.MAX_VALUE) onRepsChange(((count ?: 0) + 1).toString()) },
+                        field = { SetInputField(draft.count, onRepsChange, count == null, enabled, if (timed) "с" else "повт.", false) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun SetInputField(
+    text: String, onChange: (String) -> Unit, invalid: Boolean,
+    enabled: Boolean, unit: String, decimal: Boolean
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    OutlinedTextField(
+        value = text, onValueChange = onChange, enabled = enabled,
+        modifier = Modifier.fillMaxWidth(), singleLine = true,
+        isError = invalid,
+        supportingText = if (invalid) ({ Text(if (decimal) "Вес ≥ 0" else "Целое число > 0") }) else null,
+        suffix = { Text(unit) },
+        keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number, imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() })
+    )
 }
 
 @Composable
@@ -550,65 +598,6 @@ private fun MetricStepper(
             }
         }
     }
-}
-
-@Composable
-private fun WeightField(
-    value: Double,
-    onValueChange: (Double) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var text by remember { mutableStateOf(if (value == 0.0) "" else formatWeight(value)) }
-
-    LaunchedEffect(value) {
-        val formatted = if (value == 0.0) "" else formatWeight(value)
-        val currentNumber = text.replace(',', '.').toDoubleOrNull()
-        if (currentNumber != value && text != formatted) {
-            text = formatted
-        }
-    }
-
-    OutlinedTextField(
-        value = text,
-        onValueChange = { str ->
-            text = str
-            val parsed = str.replace(',', '.').toDoubleOrNull() ?: 0.0
-            onValueChange(parsed)
-        },
-        modifier = modifier.height(52.dp),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        textStyle = MaterialTheme.typography.bodyMedium
-    )
-}
-
-@Composable
-private fun RepsField(
-    value: Int,
-    onValueChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var text by remember { mutableStateOf(value.toString()) }
-
-    LaunchedEffect(value) {
-        val formatted = value.toString()
-        val currentNumber = text.toIntOrNull()
-        if (currentNumber != value && text != formatted) {
-            text = formatted
-        }
-    }
-
-    OutlinedTextField(
-        value = text,
-        onValueChange = { str ->
-            text = str
-            str.toIntOrNull()?.let { if (it >= 0) onValueChange(it) }
-        },
-        modifier = modifier.height(52.dp),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        textStyle = MaterialTheme.typography.bodyMedium
-    )
 }
 
 @Composable

@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.repository.WorkoutExerciseItem
+import com.example.fitapp.data.repository.isDurationExercise
 import com.example.fitapp.ui.components.ExerciseArtworkThumbnail
 
 private val DetailBackground = Color(0xFF0D0F12)
@@ -192,9 +193,7 @@ private fun ProgramHeader(
             color = DetailText,
             fontSize = 32.sp,
             lineHeight = 36.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+            fontWeight = FontWeight.Bold
         )
 
         if (state.description.isNotBlank()) {
@@ -348,7 +347,7 @@ private fun ExerciseRow(index: Int, item: WorkoutExerciseItem, onClick: () -> Un
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "${item.sets} × ${item.reps}",
+                        text = "${item.sets} × ${item.reps}" + if (isDurationExercise(item.exerciseCode)) " с" else " повт",
                         color = DetailText,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,

@@ -93,7 +93,7 @@ fun LogDetailScreen(
             ) {
                 item { StatsHeader(state) }
 
-                items(state.exercises, key = { it.exerciseId }) { row ->
+                items(state.exercises, key = { "${it.exerciseId}:${it.sets.firstOrNull()?.id}" }) { row ->
                     LoggedExerciseCard(row)
                 }
             }
@@ -190,7 +190,7 @@ private fun SetLogRow(setIndex: Int, setLog: SetLog) {
         Text("Подход $setIndex", fontSize = 13.sp, color = FitMuted)
         if (setLog.done) {
             Text(
-                "${setLog.weight} кг × ${setLog.reps} повт",
+                setLog.durationSeconds?.let { "$it с" } ?: "${setLog.weight} кг × ${setLog.reps} повт",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = FitAccentTeal

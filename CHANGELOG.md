@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.43 - 2026-09-15
+
+- Preserved legacy source copies outside the Android source set and kept an original source archive.
+- Added Room schema 6: archive templates/exercises without losing history, update presets by stable code, repair exercise-order collisions, preserve rest targets, and migrate timed exercises.
+- Serialized partial set writes with retry and flush before exit; validated visible input and added regression tests.
+- Corrected period statistics, replaced fictitious calories with completed sets, and exposed the full journal.
+- Matched programs to equipment, corrected home exercise variants, enabled editor reordering, and clarified onboarding limitations.
+- Added foreground rest signals, permission-aware background alarms, and signal settings.
+
+## 0.4.42 - 2026-08-09
+
+- Preserved program exercise order in active sessions and added regression tests for order and progress calculations.
+- Made workout resume/finish behavior idempotent and corrected completed-set volume calculations.
+- Added in-workout technique access, exercise artwork thumbnails, compact completed sets, weight guidance, and keyboard-safe input.
+- Improved long program titles, predictable exercise artwork fitting, and calorie-estimate wording for closed testing.
+
 ## 0.4.41 - 2026-07-31
 
 - Restored exercise artwork thumbnails in the redesigned brushed steel catalog cards.

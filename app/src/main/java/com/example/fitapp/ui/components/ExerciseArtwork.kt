@@ -86,7 +86,7 @@ fun ExerciseArtworkHero(
         Surface(
             modifier = modifier
                 .fillMaxWidth()
-                .aspectRatio(4f / 3f)
+                .aspectRatio(1f)
                 .clickable { showFullImage = true },
             color = Color.White,
             shape = RoundedCornerShape(18.dp),
@@ -112,7 +112,7 @@ fun ExerciseArtworkHero(
         MissingArtwork(
             modifier = modifier
                 .fillMaxWidth()
-                .aspectRatio(4f / 3f)
+                .aspectRatio(1f)
         )
     }
 }
@@ -204,6 +204,9 @@ private fun MissingArtwork(modifier: Modifier = Modifier) {
 @DrawableRes
 private fun exerciseArtworkResId(exerciseCode: String, primaryMuscleCode: String): Int? =
     when (exerciseCode) {
+        // Do not substitute a barbell/squat illustration for this new variant.
+        "dumbbell_romanian_deadlift" -> R.drawable.exercise_dumbbell_romanian_deadlift
+        "bodyweight_lunge" -> R.drawable.exercise_bodyweight_lunge
         "pushup" -> R.drawable.exercise_pushup
         "bench_press" -> R.drawable.exercise_chest_press
         "dumbbell_bench_press" -> R.drawable.exercise_dumbbell_bench_press

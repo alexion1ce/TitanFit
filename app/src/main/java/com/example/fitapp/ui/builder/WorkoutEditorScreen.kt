@@ -20,7 +20,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DragIndicator
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fitapp.data.repository.WorkoutExerciseItem
+import com.example.fitapp.data.repository.isDurationExercise
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,7 +108,7 @@ fun WorkoutEditorScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        IconButton(onClick = viewModel::save) {
+                        IconButton(onClick = viewModel::save, enabled = !state.isLoading) {
                             Icon(Icons.Default.Check, contentDescription = "Сохранить")
                         }
                     }
@@ -116,9 +118,6 @@ fun WorkoutEditorScreen(
     ) { padding ->
         when {
             state.isLoading -> LoadingState()
-            state.errorMessage != null -> {
-                ErrorWithRetry(state.errorMessage!!, viewModel::clearError)
-            }
             else -> EditorContent(state, viewModel, onAddExercise, Modifier.padding(padding))
         }
     }
@@ -138,6 +137,9 @@ private fun EditorContent(
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        if (state.errorMessage != null) {
+            item { Text(state.errorMessage, color = MaterialTheme.colorScheme.error) }
+        }
         // Название
         item {
             OutlinedTextField(
@@ -201,9 +203,12 @@ private fun EditorContent(
                 ExerciseInWorkoutCard(
                     item = item,
                     index = index + 1,
-                    onSetsChange = { viewModel.onExerciseSetsChanged(index, it) },
-                    onRepsChange = { viewModel.onExerciseRepsChanged(index, it) },
-                    onRestChange = { viewModel.onExerciseRestChanged(index, it) },
+                    draft = state.drafts[item.exerciseId] ?: item.parameterDraft(),
+                    onDraftChange = { viewModel.onExerciseParametersChanged(index, it) },
+                    onMoveUp = { viewModel.onMoveExercise(index, index - 1) },
+                    onMoveDown = { viewModel.onMoveExercise(index, index + 1) },
+                    canMoveUp = index > 0,
+                    canMoveDown = index < state.exercises.lastIndex,
                     onRemove = { viewModel.onRemoveExercise(index) }
                 )
             }
@@ -215,9 +220,12 @@ private fun EditorContent(
 private fun ExerciseInWorkoutCard(
     item: WorkoutExerciseItem,
     index: Int,
-    onSetsChange: (Int) -> Unit,
-    onRepsChange: (String) -> Unit,
-    onRestChange: (Int) -> Unit,
+    draft: ExerciseParameterDraft,
+    onDraftChange: (ExerciseParameterDraft) -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     onRemove: () -> Unit
 ) {
     Card(
@@ -249,6 +257,12 @@ private fun ExerciseInWorkoutCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                IconButton(onClick = onMoveUp, enabled = canMoveUp) {
+                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Выше")
+                }
+                IconButton(onClick = onMoveDown, enabled = canMoveDown) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Ниже")
+                }
                 IconButton(onClick = onRemove) {
                     Icon(
                         Icons.Default.Close,
@@ -268,24 +282,23 @@ private fun ExerciseInWorkoutCard(
             ) {
                 ParamField(
                     label = "Подходы",
-                    value = item.sets.toString(),
-                    onValueChange = { str ->
-                        str.toIntOrNull()?.let { if (it >= 0) onSetsChange(it) }
-                    },
+                    value = draft.sets,
+                    onValueChange = { onDraftChange(draft.copy(sets = it)) },
+                    isError = !draft.validSets,
                     modifier = Modifier.weight(1f)
                 )
                 ParamField(
-                    label = "Повторения",
-                    value = item.reps,
-                    onValueChange = onRepsChange,
+                    label = if (isDurationExercise(item.exerciseCode)) "Секунды" else "Повторения",
+                    value = draft.reps,
+                    onValueChange = { onDraftChange(draft.copy(reps = it)) },
+                    isError = !draft.validReps,
                     modifier = Modifier.weight(1f)
                 )
                 ParamField(
                     label = "Отдых (с)",
-                    value = item.restSeconds.toString(),
-                    onValueChange = { str ->
-                        str.toIntOrNull()?.let { if (it >= 0) onRestChange(it) }
-                    },
+                    value = draft.rest,
+                    onValueChange = { onDraftChange(draft.copy(rest = it)) },
+                    isError = !draft.validRest,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -298,22 +311,13 @@ private fun ParamField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
+    isError: Boolean,
     modifier: Modifier = Modifier
 ) {
-    var text by remember { mutableStateOf(value) }
-
-    LaunchedEffect(value) {
-        if (value != text) {
-            text = value
-        }
-    }
-
     OutlinedTextField(
-        value = text,
-        onValueChange = { newText ->
-            text = newText
-            onValueChange(newText)
-        },
+        value = value,
+        onValueChange = onValueChange,
+        isError = isError,
         label = { Text(label, fontSize = 12.sp) },
         modifier = modifier.height(56.dp),
         singleLine = true,

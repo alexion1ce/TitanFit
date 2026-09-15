@@ -93,5 +93,91 @@ object DatabaseMigrations {
         }
     }
 
-    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `set_logs` ADD COLUMN `exerciseOrder` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `workout_logs` ADD COLUMN `restTimerTotalSeconds` INTEGER")
+            db.execSQL("ALTER TABLE `workout_logs` ADD COLUMN `restTimerEndsAt` INTEGER")
+            db.execSQL(
+                """
+                UPDATE `set_logs`
+                SET `exerciseOrder` = COALESCE(
+                    (
+                        SELECT `workout_exercises`.`order`
+                        FROM `workout_exercises`
+                        INNER JOIN `workout_logs`
+                            ON `workout_logs`.`workoutId` = `workout_exercises`.`workoutId`
+                        WHERE `workout_logs`.`id` = `set_logs`.`logId`
+                          AND `workout_exercises`.`exerciseId` = `set_logs`.`exerciseId`
+                        ORDER BY `workout_exercises`.`order`
+                        LIMIT 1
+                    ),
+                    0
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_set_logs_logId_exerciseOrder_setNumber` " +
+                    "ON `set_logs` (`logId`, `exerciseOrder`, `setNumber`)"
+            )
+        }
+    }
+
+    val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `workouts` ADD COLUMN `isArchived` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `workouts` ADD COLUMN `presetCode` TEXT")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_workouts_presetCode` ON `workouts` (`presetCode`)")
+            db.execSQL("ALTER TABLE `exercises` ADD COLUMN `isArchived` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `set_logs` ADD COLUMN `durationSeconds` INTEGER")
+            db.execSQL("ALTER TABLE `set_logs` ADD COLUMN `restSeconds` INTEGER NOT NULL DEFAULT 60")
+            // Legacy sessions have no rest snapshot: only use a matching exercise,
+            // never the unrelated exercise now occupying its template position.
+            db.execSQL(
+                """
+                UPDATE `set_logs` SET `restSeconds` = COALESCE((
+                    SELECT MAX(0, MIN(3600, we.restSeconds))
+                    FROM workout_exercises we
+                    INNER JOIN workout_logs wl ON wl.workoutId = we.workoutId
+                    WHERE wl.id = set_logs.logId AND we.exerciseId = set_logs.exerciseId
+                        AND we.`order` = set_logs.exerciseOrder
+                    LIMIT 1
+                ), (
+                    SELECT MAX(0, MIN(3600, we.restSeconds))
+                    FROM workout_exercises we
+                    INNER JOIN workout_logs wl ON wl.workoutId = we.workoutId
+                    WHERE wl.id = set_logs.logId AND we.exerciseId = set_logs.exerciseId
+                    ORDER BY we.`order` LIMIT 1
+                ), 60)
+                """.trimIndent()
+            )
+            // Keep every old group, including repeated occurrences of an exercise.
+            // A fixed mapping avoids reading positions changed by this same UPDATE.
+            db.execSQL(
+                """
+                CREATE TEMP TABLE session_groups_v6 AS
+                SELECT DISTINCT logId, exerciseOrder AS oldOrder, exerciseId FROM set_logs
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                UPDATE set_logs SET exerciseOrder = (
+                    SELECT COUNT(*) FROM session_groups_v6 g
+                    WHERE g.logId = set_logs.logId AND
+                        (g.oldOrder < set_logs.exerciseOrder OR
+                        (g.oldOrder = set_logs.exerciseOrder AND g.exerciseId < set_logs.exerciseId))
+                )
+                """.trimIndent()
+            )
+            db.execSQL("DROP TABLE session_groups_v6")
+            db.execSQL(
+                """
+                UPDATE set_logs SET durationSeconds = MAX(1, reps), reps = 0, weight = 0
+                WHERE exerciseId IN (SELECT id FROM exercises WHERE code IN ('plank', 'side_plank'))
+                """.trimIndent()
+            )
+        }
+    }
+
+    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
 }

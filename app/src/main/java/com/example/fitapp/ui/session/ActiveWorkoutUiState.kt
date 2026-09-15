@@ -7,6 +7,11 @@ import com.example.fitapp.data.local.entity.SetLog
  */
 data class ExerciseSetGroup(
     val exerciseId: Long,
+    val exerciseOrder: Int,
+    val exerciseCode: String,
+    val primaryMuscleCode: String,
+    val secondaryMuscleCode: String?,
+    val equipmentCode: String,
     val exerciseName: String,
     val muscleName: String,
     val muscleEmoji: String,
@@ -16,6 +21,11 @@ data class ExerciseSetGroup(
 
 data class ActiveWorkoutUiState(
     val isLoading: Boolean = true,
+    val isSaving: Boolean = false,
+    val isClosing: Boolean = false,
+    val saveError: String? = null,
+    val timerNotice: String? = null,
+    val drafts: Map<Long, SetInputDraft> = emptyMap(),
     val logId: Long = 0,
     val workoutName: String = "",
     val startedAt: Long = 0,

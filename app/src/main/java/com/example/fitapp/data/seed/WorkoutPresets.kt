@@ -156,7 +156,7 @@ object WorkoutPresets {
             name = "Дом (свой вес) — Низ тела и Кор",
             description = "Выпады, ягодичный мостик и боковая планка для работы дома.",
             exercises = listOf(
-                PresetExercise("lunge", 4, "12", 60),
+                PresetExercise("bodyweight_lunge", 4, "12", 60),
                 PresetExercise("glute_bridge", 4, "15", 45),
                 PresetExercise("side_plank", 3, "30", 45),
                 PresetExercise("crunch", 3, "20", 45)
@@ -184,7 +184,7 @@ object WorkoutPresets {
             description = "Гоблет-приседания, румынская тяга с гантелями и ягодицы.",
             exercises = listOf(
                 PresetExercise("goblet_squat", 4, "12", 90),
-                PresetExercise("romanian_deadlift", 3, "10", 90),
+                PresetExercise("dumbbell_romanian_deadlift", 3, "10", 90),
                 PresetExercise("lunge", 3, "12", 60),
                 PresetExercise("glute_bridge", 3, "15", 45)
             )

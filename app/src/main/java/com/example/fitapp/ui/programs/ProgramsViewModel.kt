@@ -3,6 +3,7 @@ package com.example.fitapp.ui.programs
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitapp.data.local.entity.WorkoutLocation
+import com.example.fitapp.data.repository.isProgramCompatible
 import com.example.fitapp.data.repository.DatabaseInitializer
 import com.example.fitapp.data.repository.UserProfileRepository
 import com.example.fitapp.data.repository.WorkoutRepository
@@ -56,16 +57,8 @@ class ProgramsViewModel @Inject constructor(
                         exercises = detail?.exercises.orEmpty()
                     )
                 }
-                val ranked = cards.sortedByDescending { card ->
-                    val name = card.workout.name.lowercase()
-                    var score = 0
-                    when (profile.location) {
-                        WorkoutLocation.HOME_DUMBBELLS -> if (name.contains("dumbbell") || name.contains("гантел")) score += 10
-                        WorkoutLocation.HOME_BODYWEIGHT -> if (name.contains("body") || name.contains("вес")) score += 10
-                        WorkoutLocation.GYM -> if (!name.contains("home") && !name.contains("дом")) score += 4
-                    }
-                    if (profile.experience.name == "BEGINNER" && name.contains("full body")) score += 6
-                    score
+                val ranked = cards.filter { card ->
+                    isProgramCompatible(card.exercises.map { it.equipmentCode }, profile.location)
                 }
                 ProgramsUiState(
                     isLoading = false,

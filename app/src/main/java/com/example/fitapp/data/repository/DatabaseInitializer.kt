@@ -1,5 +1,7 @@
 package com.example.fitapp.data.repository
 
+import androidx.room.withTransaction
+import com.example.fitapp.data.local.AppDatabase
 import com.example.fitapp.data.local.dao.EquipmentDao
 import com.example.fitapp.data.local.dao.ExerciseDao
 import com.example.fitapp.data.local.dao.MuscleGroupDao
@@ -19,30 +21,28 @@ import javax.inject.Singleton
  */
 @Singleton
 class DatabaseInitializer @Inject constructor(
+    private val db: AppDatabase,
     private val muscleGroupDao: MuscleGroupDao,
     private val equipmentDao: EquipmentDao,
     private val exerciseDao: ExerciseDao,
     private val workoutDao: WorkoutDao,
     private val workoutExerciseDao: WorkoutExerciseDao
 ) {
-    suspend fun initializeIfNeeded() {
+    suspend fun initializeIfNeeded() = db.withTransaction {
         if (muscleGroupDao.count() == 0) {
             muscleGroupDao.insertAll(DatabaseSeeder.muscleGroups)
         }
         if (equipmentDao.count() == 0) {
             equipmentDao.insertAll(DatabaseSeeder.equipment)
         }
-        removeDeprecatedExercises()
+        archiveDeprecatedExercises()
         updateRenamedExercises()
         seedMissingExercises()
-        if (workoutDao.countPresets() < WorkoutPresets.presets.size) {
-            workoutDao.deletePresets()
-            seedPresets()
-        }
+        seedPresets()
     }
 
-    private suspend fun removeDeprecatedExercises() {
-        exerciseDao.deleteByCodes(listOf("good_morning"))
+    private suspend fun archiveDeprecatedExercises() {
+        exerciseDao.archiveByCodes(listOf("good_morning"))
     }
 
     private suspend fun updateRenamedExercises() {
@@ -67,15 +67,25 @@ class DatabaseInitializer @Inject constructor(
         val codeToId = exerciseDao.getAllCodes().associate { it.code to it.id }
 
         for (preset in WorkoutPresets.presets) {
-            val workoutId = workoutDao.insert(
-                Workout(
+            val existing = workoutDao.getPreset(preset.code, preset.name)
+            val updated = existing?.copy(
+                name = preset.name,
+                notes = preset.description,
+                presetCode = preset.code
+            )
+            val workoutId = if (existing == null) {
+                workoutDao.insert(Workout(
                     name = preset.name,
                     type = WorkoutType.PRESET.storageKey,
-                    notes = preset.description
-                )
-            )
-            val workoutExercises = preset.exercises.mapIndexedNotNull { index, ex ->
-                val exerciseId = codeToId[ex.code] ?: return@mapIndexedNotNull null
+                    notes = preset.description,
+                    presetCode = preset.code
+                ))
+            } else {
+                if (updated != existing) workoutDao.update(requireNotNull(updated))
+                existing.id
+            }
+            val workoutExercises = preset.exercises.mapIndexed { index, ex ->
+                val exerciseId = requireNotNull(codeToId[ex.code]) { "Unknown preset exercise: ${ex.code}" }
                 WorkoutExercise(
                     workoutId = workoutId,
                     exerciseId = exerciseId,
@@ -85,7 +95,10 @@ class DatabaseInitializer @Inject constructor(
                     restSeconds = ex.restSeconds
                 )
             }
-            workoutExerciseDao.insertAll(workoutExercises)
+            val current = workoutExerciseDao.getByWorkout(workoutId)
+            if (current.map { it.copy(id = 0) } != workoutExercises) {
+                workoutExerciseDao.replaceWorkoutExercises(workoutId, workoutExercises)
+            }
         }
     }
 }

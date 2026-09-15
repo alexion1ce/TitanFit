@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.fitapp"
         minSdk = 26
         targetSdk = 34
-        versionCode = 55
-        versionName = "0.4.41"
+        versionCode = 57
+        versionName = "0.4.43"
     }
 
     buildTypes {
@@ -37,6 +37,10 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {

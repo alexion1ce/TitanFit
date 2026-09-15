@@ -61,6 +61,8 @@ class WorkoutEditorViewModel @Inject constructor(
                     WorkoutExerciseItem(
                         workoutExerciseId = 0,
                         exerciseId = ex.id,
+                        exerciseCode = ex.code,
+                        equipmentCode = ex.equipmentCode,
                         exerciseName = ex.name,
                         muscleName = muscle?.name ?: "—",
                         muscleEmoji = muscle?.emoji ?: "🏋️",
@@ -114,25 +116,20 @@ class WorkoutEditorViewModel @Inject constructor(
 
     fun onRemoveExercise(index: Int) {
         val current = _uiState.value.exercises.toMutableList()
-        current.removeAt(index)
+        if (index !in current.indices) return
+        val removed = current.removeAt(index)
         val reordered = current.mapIndexed { i, ex -> ex.copy(order = i) }
-        _uiState.value = _uiState.value.copy(exercises = reordered)
+        _uiState.value = _uiState.value.copy(exercises = reordered, drafts = _uiState.value.drafts - removed.exerciseId)
     }
 
-    fun onExerciseSetsChanged(index: Int, sets: Int) {
-        updateExerciseAt(index) { it.copy(sets = sets) }
+    fun onExerciseParametersChanged(index: Int, draft: ExerciseParameterDraft) {
+        val state = _uiState.value
+        val item = state.exercises.getOrNull(index) ?: return
+        _uiState.value = state.copy(drafts = state.drafts + (item.exerciseId to draft))
     }
-
-    fun onExerciseRepsChanged(index: Int, reps: String) {
-        updateExerciseAt(index) { it.copy(reps = reps) }
-    }
-
-    fun onExerciseRestChanged(index: Int, restSeconds: Int) {
-        updateExerciseAt(index) { it.copy(restSeconds = restSeconds) }
-    }
-
     fun onMoveExercise(fromIndex: Int, toIndex: Int) {
         val current = _uiState.value.exercises.toMutableList()
+        if (fromIndex !in current.indices || toIndex !in current.indices) return
         val item = current.removeAt(fromIndex)
         current.add(toIndex, item)
         val reordered = current.mapIndexed { i, ex -> ex.copy(order = i) }
@@ -154,6 +151,7 @@ class WorkoutEditorViewModel @Inject constructor(
 
     fun save() {
         val state = _uiState.value
+        if (state.isSaving) return
         if (state.workoutName.isBlank()) {
             _uiState.value = state.copy(errorMessage = "Введите название тренировки")
             return
@@ -163,6 +161,14 @@ class WorkoutEditorViewModel @Inject constructor(
             return
         }
 
+        val drafts = state.exercises.map { state.drafts[it.exerciseId] ?: it.parameterDraft() }
+        if (drafts.any { !it.isValid }) {
+            _uiState.value = state.copy(errorMessage = "Проверьте параметры: подходы 1–100, повторения или секунды 1–9999 (можно диапазон 8–12), отдых 0–3600 секунд")
+            return
+        }
+        val items = state.exercises.zip(drafts) { item, draft ->
+            item.copy(sets = draft.sets.toInt(), reps = draft.reps.trim(), restSeconds = draft.rest.toInt())
+        }
         viewModelScope.launch {
             _uiState.value = state.copy(isSaving = true, errorMessage = null)
             try {
@@ -170,7 +176,7 @@ class WorkoutEditorViewModel @Inject constructor(
                     workoutId = state.workoutId,
                     name = state.workoutName,
                     notes = state.workoutNotes,
-                    items = state.exercises
+                    items = items
                 )
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,

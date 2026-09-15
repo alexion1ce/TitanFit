@@ -24,10 +24,11 @@ data class OnboardingUiState(
     val preferredDuration: PreferredDuration = PreferredDuration.MEDIUM,
     val isGeneratingPlan: Boolean = false,
     val generationProgress: Float = 0f,
-    val generationMessage: String = "Анализ биометрии и нормы калорий...",
+    val generationMessage: String = "Оценка ориентировочной суточной калорийности...",
     val recommendedPrograms: List<ProgramCard> = emptyList(),
     val selectedProgramId: Long? = null,
     val isLoading: Boolean = false,
+    val errorMessage: String? = null,
     val isCompleted: Boolean = false
 ) {
     val tempProfile: UserProfile

@@ -103,7 +103,12 @@ fun ProgramsScreen(
 
             state.errorMessage != null -> EmptyPrograms(state.errorMessage ?: "Не удалось загрузить программы")
 
-            state.programs.isEmpty() -> EmptyPrograms("Программы пока не добавлены")
+            state.programs.isEmpty() -> Column(Modifier.fillMaxSize().padding(24.dp)) {
+                val currentLocation by viewModel.currentLocation.collectAsStateWithLifecycle()
+                Header("Программы", currentLocation, viewModel::toggleLocation, onOpenOnboarding)
+                Text("Нет готовых тренировок для этого оборудования. Измените оборудование или создайте свою тренировку.", color = TextSecondary)
+                androidx.compose.material3.TextButton(onClick = onMyWorkoutsClick) { Text("Мои тренировки") }
+            }
 
             else -> {
                 var showSelectDayDialog by remember { mutableStateOf(false) }
@@ -236,7 +241,7 @@ private fun TodayTitle(onChangeDayClick: () -> Unit) {
                 .background(Red, RoundedCornerShape(4.dp))
         )
         Spacer(Modifier.width(10.dp))
-        Text("Сегодня", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text("Готовая тренировка", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
 
         Surface(
             modifier = Modifier
@@ -415,7 +420,7 @@ private fun CompactProgramCard(card: ProgramCard, onClick: () -> Unit) {
                     color = TextPrimary,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
@@ -550,7 +555,7 @@ private fun WorkoutSelectionDialog(
                                         color = TextPrimary,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
-                                        maxLines = 1,
+                                        maxLines = 2,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Spacer(Modifier.height(3.dp))

@@ -1,6 +1,7 @@
 package com.example.fitapp.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -48,5 +49,6 @@ data class Exercise(
     val difficulty: String,
     val imageUrl: String?,
     val videoUrl: String?,
-    val technique: String
+    val technique: String,
+    @ColumnInfo(defaultValue = "0") val isArchived: Boolean = false
 )
