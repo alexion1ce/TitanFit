@@ -13,7 +13,9 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.titanfit.app"
+        // `-PappId=com.example.fitapp` builds a one-off APK over the old install,
+        // so its data can be exported before switching to the new id.
+        applicationId = providers.gradleProperty("appId").getOrElse("com.titanfit.app")
         minSdk = 26
         targetSdk = 35
         versionCode = 58
