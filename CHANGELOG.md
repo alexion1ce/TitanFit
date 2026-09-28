@@ -13,6 +13,9 @@ Fixes from the 28.09.2026 code audit. Not yet built or run on a device.
 - The workout editor accepts the same exercise twice (stable row keys instead of exercise ids).
 - Friendlier error texts with logging, visible delete errors, guarded video links, monochrome notification icon, notification permission asked at the first rest timer.
 - Explicit backup rules, removed unused INTERNET permission and stale build rules, optional release signing via untracked `keystore.properties`, R8 enabled for release.
+- Changed the application id to `com.titanfit.app` (installs as a separate app; move data with export/import). Kotlin package names are unchanged.
+- Raised compileSdk/targetSdk to 35 without dependency updates (edge-to-edge was already enabled).
+- Removed the unused ad stubs (`AdManager`, `AdBannerContainer` with a placeholder promo).
 - Added GitHub Actions CI (unit tests, lint, debug build) and unit tests for progress calculations and user messages.
 
 ## 0.4.43 - 2026-09-15

@@ -10,12 +10,12 @@ plugins {
 
 android {
     namespace = "com.example.fitapp"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.fitapp"
+        applicationId = "com.titanfit.app"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 58
         versionName = "0.4.44"
     }
