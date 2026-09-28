@@ -1,8 +1,10 @@
 package com.example.fitapp.ui.builder
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fitapp.ui.components.userMessage
 import com.example.fitapp.data.repository.ExerciseRepository
 import com.example.fitapp.data.repository.MuscleGroupRepository
 import com.example.fitapp.data.repository.WorkoutExerciseItem
@@ -25,6 +27,8 @@ class WorkoutEditorViewModel @Inject constructor(
     private val workoutIdArg: Long = savedStateHandle.get<Long>("workoutId") ?: -1L
 
     private val _uiState = MutableStateFlow(WorkoutEditorUiState())
+    private var nextEditorKey = 1L
+    private fun newKey() = nextEditorKey++
     val uiState: StateFlow<WorkoutEditorUiState> = _uiState.asStateFlow()
 
     init {
@@ -45,9 +49,10 @@ class WorkoutEditorViewModel @Inject constructor(
 
     /**
      * Превращает набор ID упражнений в WorkoutExerciseItem с дефолтными параметрами
-     * и добавляет в текущий список (без дублей).
+     * и добавляет в конец списка. Повторное упражнение допускается только из пикера:
+     * пользователь выбрал его явно.
      */
-    private suspend fun addExerciseIds(ids: Set<Long>) {
+    private suspend fun addExerciseIds(ids: Set<Long>, allowDuplicates: Boolean) {
         val exercises = exerciseRepository.getByIds(ids.toList())
         val muscles = muscleGroupRepository.getAll().associateBy { it.code }
 
@@ -55,7 +60,7 @@ class WorkoutEditorViewModel @Inject constructor(
         val existingIds = current.map { it.exerciseId }.toSet()
 
         for (ex in exercises) {
-            if (ex.id !in existingIds) {
+            if (allowDuplicates || ex.id !in existingIds) {
                 val muscle = muscles[ex.primaryMuscleCode]
                 current.add(
                     WorkoutExerciseItem(
@@ -69,7 +74,8 @@ class WorkoutEditorViewModel @Inject constructor(
                         order = current.size,
                         sets = 3,
                         reps = "12",
-                        restSeconds = 60
+                        restSeconds = 60,
+                        editorKey = newKey()
                     )
                 )
             }
@@ -95,12 +101,13 @@ class WorkoutEditorViewModel @Inject constructor(
                     workoutId = detail.id,
                     workoutName = detail.name,
                     workoutNotes = detail.notes ?: "",
-                    exercises = detail.exercises
+                    exercises = detail.exercises.map { it.copy(editorKey = newKey()) }
                 )
             } catch (e: Exception) {
+                Log.e("WorkoutEditorViewModel", "Operation failed", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Ошибка загрузки: ${e.message}"
+                    errorMessage = "Не удалось загрузить тренировку."
                 )
             }
         }
@@ -119,13 +126,13 @@ class WorkoutEditorViewModel @Inject constructor(
         if (index !in current.indices) return
         val removed = current.removeAt(index)
         val reordered = current.mapIndexed { i, ex -> ex.copy(order = i) }
-        _uiState.value = _uiState.value.copy(exercises = reordered, drafts = _uiState.value.drafts - removed.exerciseId)
+        _uiState.value = _uiState.value.copy(exercises = reordered, drafts = _uiState.value.drafts - removed.editorKey)
     }
 
     fun onExerciseParametersChanged(index: Int, draft: ExerciseParameterDraft) {
         val state = _uiState.value
         val item = state.exercises.getOrNull(index) ?: return
-        _uiState.value = state.copy(drafts = state.drafts + (item.exerciseId to draft))
+        _uiState.value = state.copy(drafts = state.drafts + (item.editorKey to draft))
     }
     fun onMoveExercise(fromIndex: Int, toIndex: Int) {
         val current = _uiState.value.exercises.toMutableList()
@@ -136,14 +143,24 @@ class WorkoutEditorViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(exercises = reordered)
     }
 
-    fun addPickedExerciseIds(ids: Set<Long>) {
+    fun addPickedExerciseIds(ids: Set<Long>) = addIds(ids, allowDuplicates = true)
+
+    /** Exercise passed from the catalog; added once even if the screen is recreated. */
+    fun addInitialExercise(id: Long) {
+        if (savedStateHandle.get<Boolean>(KEY_INITIAL_ADDED) == true) return
+        savedStateHandle[KEY_INITIAL_ADDED] = true
+        addIds(setOf(id), allowDuplicates = false)
+    }
+
+    private fun addIds(ids: Set<Long>, allowDuplicates: Boolean) {
         if (ids.isEmpty()) return
         viewModelScope.launch {
             try {
-                addExerciseIds(ids)
+                addExerciseIds(ids, allowDuplicates)
             } catch (e: Exception) {
+                Log.e("WorkoutEditorViewModel", "Operation failed", e)
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = "Ошибка добавления упражнений: ${e.message}"
+                    errorMessage = "Не удалось добавить упражнения."
                 )
             }
         }
@@ -161,7 +178,7 @@ class WorkoutEditorViewModel @Inject constructor(
             return
         }
 
-        val drafts = state.exercises.map { state.drafts[it.exerciseId] ?: it.parameterDraft() }
+        val drafts = state.exercises.map { state.drafts[it.editorKey] ?: it.parameterDraft() }
         if (drafts.any { !it.isValid }) {
             _uiState.value = state.copy(errorMessage = "Проверьте параметры: подходы 1–100, повторения или секунды 1–9999 (можно диапазон 8–12), отдых 0–3600 секунд")
             return
@@ -185,9 +202,10 @@ class WorkoutEditorViewModel @Inject constructor(
                     isNewWorkout = false
                 )
             } catch (e: Exception) {
+                Log.e("WorkoutEditorViewModel", "Operation failed", e)
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
-                    errorMessage = "Ошибка сохранения: ${e.message}"
+                    errorMessage = userMessage(e, "Не удалось сохранить тренировку. Попробуйте ещё раз.")
                 )
             }
         }
@@ -212,5 +230,6 @@ class WorkoutEditorViewModel @Inject constructor(
     companion object {
         /** Ключ в SavedStateHandle для передачи выбранных упражнений из пикера. */
         const val KEY_PICKED_IDS = "picked_exercise_ids"
+        private const val KEY_INITIAL_ADDED = "initial_exercise_added"
     }
 }

@@ -14,6 +14,9 @@ interface WorkoutLogDao {
     @Query("SELECT * FROM workout_logs ORDER BY startedAt DESC")
     fun observeAll(): Flow<List<WorkoutLog>>
 
+    @Query("SELECT * FROM workout_logs ORDER BY startedAt")
+    suspend fun getAll(): List<WorkoutLog>
+
     @Query("SELECT * FROM workout_logs WHERE id = :id")
     suspend fun getById(id: Long): WorkoutLog?
 

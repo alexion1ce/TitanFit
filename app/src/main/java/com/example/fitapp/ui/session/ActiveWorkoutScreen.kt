@@ -1,6 +1,13 @@
 package com.example.fitapp.ui.session
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -94,8 +101,25 @@ fun ActiveWorkoutScreen(
         viewModel.setForeground(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
         onDispose { viewModel.setForeground(false); lifecycleOwner.lifecycle.removeObserver(observer) }
     }
+    // Ask for notifications when the rest signal is first needed, not on app launch.
+    val notificationPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { viewModel.setForeground(true) }
+    var notificationsAsked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(state.restTimer.isActive) {
+        if (
+            state.restTimer.isActive && !notificationsAsked &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationsAsked = true
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     var showFinishDialog by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
+    var showCancelConfirm by remember { mutableStateOf(false) }
     var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
 
     BackHandler(enabled = !state.isLoading && !state.isFinished && !state.shouldExit) {
@@ -254,15 +278,14 @@ fun ActiveWorkoutScreen(
                 Text("Можно продолжить позже, сохранить отмеченные подходы или отменить тренировку без сохранения.")
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showExitDialog = false
-                        viewModel.saveWorkoutAndExit()
-                    }
-                ) { Text("Сохранить выполненные и выйти") }
-            },
-            dismissButton = {
-                Row {
+                // Stacked vertically so long labels fit with large fonts.
+                Column(horizontalAlignment = Alignment.End) {
+                    TextButton(
+                        onClick = {
+                            showExitDialog = false
+                            viewModel.saveWorkoutAndExit()
+                        }
+                    ) { Text("Сохранить выполненные и выйти") }
                     TextButton(
                         onClick = {
                             showExitDialog = false
@@ -272,10 +295,35 @@ fun ActiveWorkoutScreen(
                     TextButton(
                         onClick = {
                             showExitDialog = false
-                            viewModel.cancelWorkout()
+                            showCancelConfirm = true
                         }
-                    ) { Text("Отменить без сохранения") }
+                    ) { Text("Отменить без сохранения", color = MaterialTheme.colorScheme.error) }
                 }
+            }
+        )
+    }
+
+    if (showCancelConfirm) {
+        val doneSets = state.groups.sumOf { group -> group.sets.count { it.done } }
+        AlertDialog(
+            onDismissRequest = { showCancelConfirm = false },
+            title = { Text("Удалить тренировку?") },
+            text = {
+                Text(
+                    if (doneSets > 0) "Тренировка и $doneSets отмеченных подходов будут удалены безвозвратно, включая записанные ранее."
+                    else "Тренировка будет удалена без сохранения в журнал."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCancelConfirm = false
+                        viewModel.cancelWorkout()
+                    }
+                ) { Text("Удалить", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelConfirm = false }) { Text("Не удалять") }
             }
         )
     }

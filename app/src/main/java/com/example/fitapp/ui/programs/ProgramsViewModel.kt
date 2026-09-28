@@ -1,34 +1,26 @@
 package com.example.fitapp.ui.programs
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitapp.data.local.entity.WorkoutLocation
 import com.example.fitapp.data.repository.isProgramCompatible
-import com.example.fitapp.data.repository.DatabaseInitializer
 import com.example.fitapp.data.repository.UserProfileRepository
 import com.example.fitapp.data.repository.WorkoutRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProgramsViewModel @Inject constructor(
     private val workoutRepository: WorkoutRepository,
-    private val userProfileRepository: UserProfileRepository,
-    private val databaseInitializer: DatabaseInitializer
+    private val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
-
-    init {
-        viewModelScope.launch {
-            databaseInitializer.initializeIfNeeded()
-        }
-    }
 
     val currentLocation: StateFlow<WorkoutLocation> =
         userProfileRepository.profileFlow
@@ -44,12 +36,11 @@ class ProgramsViewModel @Inject constructor(
         userProfileRepository.updateLocation(next)
     }
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-
     val uiState: StateFlow<ProgramsUiState> =
         combine(workoutRepository.observePresets(), userProfileRepository.profileFlow) { workouts, profile ->
+                val details = workoutRepository.getDetails(workouts.map { it.id })
                 val cards = workouts.map { w ->
-                    val detail = workoutRepository.getDetail(w.id)
+                    val detail = details[w.id]
                     ProgramCard(
                         workout = w,
                         exerciseCount = detail?.exercises?.size ?: 0,
@@ -62,9 +53,12 @@ class ProgramsViewModel @Inject constructor(
                 }
                 ProgramsUiState(
                     isLoading = false,
-                    programs = ranked,
-                    errorMessage = _errorMessage.value
+                    programs = ranked
                 )
+            }
+            .catch { e ->
+                Log.e("ProgramsViewModel", "Failed to load programs", e)
+                emit(ProgramsUiState(isLoading = false, errorMessage = "Не удалось загрузить программы. Попробуйте открыть экран ещё раз."))
             }
             .stateIn(
                 scope = viewModelScope,

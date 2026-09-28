@@ -12,5 +12,7 @@ data class JournalEntry(
 data class JournalUiState(
     val isLoading: Boolean = true,
     val entries: List<JournalEntry> = emptyList(),
+    /** Sessions left with "continue later"; kept visible so they are never lost. */
+    val unfinished: List<JournalEntry> = emptyList(),
     val errorMessage: String? = null
 )

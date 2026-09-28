@@ -34,7 +34,7 @@ class OnboardingViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            databaseInitializer.initializeIfNeeded()
+            databaseInitializer.tryInitialize()
         }
         val existing = userProfileRepository.loadProfile()
         _uiState.value = _uiState.value.copy(
@@ -128,8 +128,9 @@ class OnboardingViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
                 val presets = workoutRepository.observePresets().first()
+                val details = workoutRepository.getDetails(presets.map { it.id })
                 val cards = presets.map { w ->
-                    val detail = workoutRepository.getDetail(w.id)
+                    val detail = details[w.id]
                     ProgramCard(
                         workout = w,
                         exerciseCount = detail?.exercises?.size ?: 0,

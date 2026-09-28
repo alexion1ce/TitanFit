@@ -15,6 +15,10 @@ interface EquipmentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<Equipment>)
 
+    /** Adds reference rows by their unique code without touching existing ones. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMissing(items: List<Equipment>)
+
     @Query("SELECT COUNT(*) FROM equipment")
     suspend fun count(): Int
 }

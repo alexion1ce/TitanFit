@@ -1,5 +1,6 @@
 package com.example.fitapp.ui.catalog
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitapp.data.local.entity.Difficulty
@@ -144,7 +145,8 @@ class CatalogViewModel @Inject constructor(
                     equipmentChips = equipment.map { EquipmentChip(it.code, it.name) }
                 )
             } catch (e: Exception) {
-                _errorMessage.value = "Не удалось загрузить данные: ${e.message}"
+                Log.e("CatalogViewModel", "Operation failed", e)
+                _errorMessage.value = "Не удалось загрузить каталог. Перезапустите приложение."
             }
         }
     }

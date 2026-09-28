@@ -18,6 +18,10 @@ interface WorkoutDao {
     @Query("SELECT * FROM workouts WHERE type = :type AND isArchived = 0 ORDER BY name")
     fun observeByType(type: String): Flow<List<Workout>>
 
+    /** Includes archived workouts: used by backup, which must keep history links. */
+    @Query("SELECT * FROM workouts WHERE type = :type ORDER BY id")
+    suspend fun getAllByType(type: String): List<Workout>
+
     @Query("SELECT COUNT(*) FROM workouts WHERE type = :type AND isArchived = 0")
     suspend fun countByType(type: String): Int
 
@@ -31,6 +35,10 @@ interface WorkoutDao {
     @Transaction
     @Query("SELECT * FROM workouts WHERE id = :id")
     suspend fun getWithExercises(id: Long): WorkoutWithExercises?
+
+    @Transaction
+    @Query("SELECT * FROM workouts WHERE id IN (:ids)")
+    suspend fun getWithExercisesByIds(ids: List<Long>): List<WorkoutWithExercises>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(workout: Workout): Long

@@ -1,9 +1,11 @@
 package com.example.fitapp.ui.session
 
+import android.util.Log
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fitapp.ui.components.userMessage
 import com.example.fitapp.data.local.dao.SetLogDao
 import com.example.fitapp.data.local.dao.WorkoutLogDao
 import com.example.fitapp.data.local.entity.SetLog
@@ -44,7 +46,8 @@ class ActiveWorkoutViewModel @Inject constructor(
                 loadSession(workoutLogRepository.resumeOrStartWorkout(workoutIdArg))
             } catch (e: CancellationException) { throw e
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = "Не удалось начать тренировку: ${e.message}")
+                Log.e("ActiveWorkoutViewModel", "Operation failed", e)
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = userMessage(e, "Не удалось начать тренировку. Попробуйте ещё раз."))
             }
         }
     }

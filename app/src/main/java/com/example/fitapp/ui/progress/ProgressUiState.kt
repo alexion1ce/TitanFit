@@ -22,5 +22,8 @@ data class ProgressUiState(
     val showAllRecent: Boolean = false,
     val showAllRecords: Boolean = false,
     val isResetting: Boolean = false,
+    val isBackupBusy: Boolean = false,
+    /** Result of the last export/import, shown until dismissed. */
+    val backupMessage: String? = null,
     val errorMessage: String? = null
 )

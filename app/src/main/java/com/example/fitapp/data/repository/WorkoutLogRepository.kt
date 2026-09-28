@@ -203,89 +203,109 @@ class WorkoutLogRepository @Inject constructor(
 
     // ===================== ПРОГРЕСС =====================
 
-    /** Суммарный объём (вес × повторения) по неделям за последние [weeksCount] недель. */
-    suspend fun getWeeklyVolume(weeksCount: Int = 8): List<WeeklyVolume> {
+    /**
+     * Everything the progress screen needs, computed from two queries
+     * instead of one query per logged workout.
+     */
+    suspend fun getProgressSnapshot(
+        weeksCount: Int,
+        recentLimit: Int = 20,
+        recordsLimit: Int = 5
+    ): ProgressSnapshot {
         val logs = workoutLogDao.getAllFinished()
-        if (logs.isEmpty()) return emptyList()
-
-        val workouts = logs.mapNotNull { log ->
-            val finishedAt = log.finishedAt ?: return@mapNotNull null
-            val completedSets = setLogDao.getByLog(log.id).filter { it.done }
-            val totalVolume = completedSets
-                .asSequence()
-                .sumOf { it.trainingVolume() }
-            CompletedWorkoutVolume(
-                finishedAt = finishedAt,
-                totalVolume = totalVolume,
-                hasCompletedSets = completedSets.isNotEmpty()
-            )
-        }
-        if (workouts.none { it.hasCompletedSets }) return emptyList()
-
-        return WeeklyVolumeCalculator.calculate(
-            workouts = workouts,
-            weeksCount = weeksCount,
-            now = Instant.ofEpochMilli(System.currentTimeMillis()),
-            zoneId = ZoneId.systemDefault()
+        val sets = if (logs.isEmpty()) emptyList() else setLogDao.getForFinishedLogs()
+        val recordSets = sets.filter { it.done && it.durationSeconds == null && it.weight > 0 }
+        val exercises = exerciseRepository.getByIds(recordSets.map { it.exerciseId }.distinct())
+            .associateBy { it.id }
+        val muscles = if (exercises.isEmpty()) emptyMap()
+            else muscleGroupRepository.getAll().associateBy { it.code }
+        val now = Instant.now()
+        val zone = ZoneId.systemDefault()
+        return ProgressSnapshot(
+            stats = calculateOverallStats(logs, sets, weeksCount, now, zone),
+            weeklyVolume = calculateWeeklyVolume(logs, sets, weeksCount, now, zone),
+            recentWorkouts = calculateRecentSummaries(logs, sets, recentLimit),
+            records = calculatePersonalRecords(logs, recordSets, recordsLimit) { id ->
+                val ex = exercises[id]
+                (ex?.name ?: "—") to (ex?.primaryMuscleCode?.let { muscles[it]?.emoji } ?: "🏋️")
+            }
         )
     }
+}
 
-    /** Топ-N личных рекордов по максимальному весу. */
-    suspend fun getPersonalRecords(limit: Int = 5): List<PersonalRecord> {
-        val logs = workoutLogDao.getAllFinished()
-        if (logs.isEmpty()) return emptyList()
+data class ProgressSnapshot(
+    val stats: OverallStats,
+    val weeklyVolume: List<WeeklyVolume>,
+    val recentWorkouts: List<RecentWorkoutSummary>,
+    val records: List<PersonalRecord>
+)
 
-        val logById = logs.associateBy { it.id }
-        val allSets = logs.flatMap { log -> setLogDao.getByLog(log.id).filter { it.done && it.durationSeconds == null && it.weight > 0 } }
-        if (allSets.isEmpty()) return emptyList()
-
-        val exerciseIds = allSets.map { it.exerciseId }.distinct()
-        val exercises = exerciseRepository.getByIds(exerciseIds).associateBy { it.id }
-        val muscles = muscleGroupRepository.getAll().associateBy { it.code }
-
-        return allSets
-            .groupBy { it.exerciseId }
-            .map { (exId, sets) ->
-                val bestWeightSet = sets.maxBy { it.weight }
-                val best1RMSet = sets.maxBy { it.weight * (1.0 + it.reps / 30.0) }
-                val estimated1RM = best1RMSet.weight * (1.0 + best1RMSet.reps / 30.0)
-                val ex = exercises[exId]
-                PersonalRecord(
-                    exerciseId = exId,
-                    exerciseName = ex?.name ?: "—",
-                    muscleEmoji = ex?.primaryMuscleCode?.let { muscles[it]?.emoji } ?: "🏋️",
-                    maxWeight = bestWeightSet.weight,
-                    estimated1RM = estimated1RM,
-                    date = logById[bestWeightSet.logId]?.startedAt ?: 0L
-                )
-            }
-            .sortedByDescending { it.maxWeight }
-            .take(limit)
+/** Weekly volume of finished workouts; empty when nothing was completed at all. */
+internal fun calculateWeeklyVolume(
+    logs: List<WorkoutLog>,
+    sets: List<SetLog>,
+    weeksCount: Int,
+    now: Instant,
+    zone: ZoneId
+): List<WeeklyVolume> {
+    val doneByLog = sets.filter { it.done }.groupBy { it.logId }
+    val workouts = logs.mapNotNull { log ->
+        val finishedAt = log.finishedAt ?: return@mapNotNull null
+        val completed = doneByLog[log.id].orEmpty()
+        CompletedWorkoutVolume(
+            finishedAt = finishedAt,
+            totalVolume = completed.sumOf { it.trainingVolume() },
+            hasCompletedSets = completed.isNotEmpty()
+        )
     }
+    if (workouts.none { it.hasCompletedSets }) return emptyList()
+    return WeeklyVolumeCalculator.calculate(workouts, weeksCount, now, zone)
+}
 
-    /** Последние завершённые тренировки со сводными метриками. */
-    suspend fun getRecentWorkoutSummaries(limit: Int = 3): List<RecentWorkoutSummary> {
-        val logs = workoutLogDao.getAllFinished().take(limit)
-        if (logs.isEmpty()) return emptyList()
+/** Latest finished workouts (logs are expected newest first). */
+internal fun calculateRecentSummaries(
+    logs: List<WorkoutLog>,
+    sets: List<SetLog>,
+    limit: Int
+): List<RecentWorkoutSummary> {
+    val doneByLog = sets.filter { it.done }.groupBy { it.logId }
+    return logs.filter { it.finishedAt != null }.take(limit).map { log ->
+        val doneSets = doneByLog[log.id].orEmpty()
+        RecentWorkoutSummary(
+            logId = log.id,
+            workoutName = log.workoutName,
+            exerciseCount = doneSets.map { it.exerciseId }.distinct().size,
+            durationMin = log.durationMin ?: 0,
+            totalVolume = doneSets.sumOf { it.trainingVolume() },
+            completedSets = doneSets.size
+        )
+    }
+}
 
-        return logs.map { log ->
-            val doneSets = setLogDao.getByLog(log.id).filter { it.done }
-            val volume = doneSets.sumOf { it.trainingVolume() }
-            RecentWorkoutSummary(
-                logId = log.id,
-                workoutName = log.workoutName,
-                exerciseCount = doneSets.map { it.exerciseId }.distinct().size,
-                durationMin = log.durationMin ?: 0,
-                totalVolume = volume,
-                completedSets = doneSets.size
+/** Top records by weight; [recordSets] must be done, weighted, non-timed sets. */
+internal fun calculatePersonalRecords(
+    logs: List<WorkoutLog>,
+    recordSets: List<SetLog>,
+    limit: Int,
+    describe: (exerciseId: Long) -> Pair<String, String>
+): List<PersonalRecord> {
+    val logById = logs.associateBy { it.id }
+    return recordSets
+        .filter { it.logId in logById }
+        .groupBy { it.exerciseId }
+        .map { (exId, sets) ->
+            val bestWeightSet = sets.maxBy { it.weight }
+            val best1RMSet = sets.maxBy { it.weight * (1.0 + it.reps / 30.0) }
+            val (name, emoji) = describe(exId)
+            PersonalRecord(
+                exerciseId = exId,
+                exerciseName = name,
+                muscleEmoji = emoji,
+                maxWeight = bestWeightSet.weight,
+                estimated1RM = best1RMSet.weight * (1.0 + best1RMSet.reps / 30.0),
+                date = logById[bestWeightSet.logId]?.startedAt ?: 0L
             )
         }
-    }
-
-    /** Общая статистика для шапки экрана прогресса. */
-    suspend fun getOverallStats(weeksCount: Int? = null): OverallStats {
-        val logs = workoutLogDao.getAllFinished()
-        val sets = logs.flatMap { setLogDao.getByLog(it.id) }
-        return calculateOverallStats(logs, sets, weeksCount, Instant.now(), ZoneId.systemDefault())
-    }
+        .sortedByDescending { it.maxWeight }
+        .take(limit)
 }

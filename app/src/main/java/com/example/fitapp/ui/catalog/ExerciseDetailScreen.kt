@@ -33,6 +33,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -148,11 +151,22 @@ private fun DetailContent(state: ExerciseDetailUiState, modifier: Modifier) {
 @Composable
 private fun VideoLink(videoUrl: String) {
     val uriHandler = LocalUriHandler.current
+    var openFailed by remember { mutableStateOf(false) }
 
-    FilledTonalButton(onClick = { uriHandler.openUri(videoUrl) }) {
+    FilledTonalButton(onClick = {
+        // No browser or YouTube app (e.g. a work profile) throws ActivityNotFoundException.
+        openFailed = runCatching { uriHandler.openUri(videoUrl) }.isFailure
+    }) {
         Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
         Spacer(Modifier.size(8.dp))
         Text("Открыть видео")
+    }
+    if (openFailed) {
+        Text(
+            "Не удалось открыть видео: на телефоне нет приложения для ссылок.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error
+        )
     }
 }
 

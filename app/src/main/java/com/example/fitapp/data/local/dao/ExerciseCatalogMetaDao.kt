@@ -13,6 +13,9 @@ interface ExerciseCatalogMetaDao {
     @Query("SELECT * FROM exercise_catalog_meta")
     fun observeAll(): Flow<List<ExerciseCatalogMeta>>
 
+    @Query("SELECT * FROM exercise_catalog_meta")
+    suspend fun getAll(): List<ExerciseCatalogMeta>
+
     @Query("SELECT * FROM exercise_catalog_meta WHERE exerciseId = :exerciseId")
     suspend fun getByExerciseId(exerciseId: Long): ExerciseCatalogMeta?
 

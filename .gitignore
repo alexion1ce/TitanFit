@@ -22,3 +22,8 @@ tmp_*contact_sheet*.jpg
 # OS files
 .DS_Store
 Thumbs.db
+
+# Release signing (never commit keys)
+keystore.properties
+*.jks
+*.keystore

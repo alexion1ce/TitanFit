@@ -139,7 +139,7 @@ object RestTimerNotifications {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_rest_timer)
             .setContentTitle("Отдых закончен")
             .setContentText("Пора начинать следующий подход")
             .setContentIntent(openAppIntent)

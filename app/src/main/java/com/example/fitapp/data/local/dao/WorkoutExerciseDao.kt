@@ -14,6 +14,9 @@ interface WorkoutExerciseDao {
     @Query("SELECT * FROM workout_exercises WHERE workoutId = :workoutId ORDER BY `order`")
     suspend fun getByWorkout(workoutId: Long): List<WorkoutExercise>
 
+    @Query("SELECT * FROM workout_exercises ORDER BY workoutId, `order`")
+    suspend fun getAll(): List<WorkoutExercise>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: WorkoutExercise): Long
 

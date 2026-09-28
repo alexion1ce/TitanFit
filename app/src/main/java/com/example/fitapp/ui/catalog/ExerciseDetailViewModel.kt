@@ -1,5 +1,6 @@
 package com.example.fitapp.ui.catalog
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -67,9 +68,10 @@ class ExerciseDetailViewModel @Inject constructor(
                     videoId = exercise.videoUrl?.let(::extractYouTubeId)
                 )
             } catch (e: Exception) {
+                Log.e("ExerciseDetailViewModel", "Operation failed", e)
                 _uiState.value = ExerciseDetailUiState(
                     isLoading = false,
-                    errorMessage = "Не удалось загрузить: ${e.message}"
+                    errorMessage = "Не удалось загрузить упражнение."
                 )
             }
         }

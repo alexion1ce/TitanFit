@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -65,11 +67,13 @@ import com.example.fitapp.ui.components.FitScreenBackground
 @Composable
 fun JournalScreen(
     onEntryClick: (Long) -> Unit,
+    onResumeWorkout: (workoutId: Long) -> Unit,
     onBack: (() -> Unit)? = null,
     viewModel: JournalViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var deleteTarget by remember { mutableStateOf<JournalEntry?>(null) }
+    var finishTarget by remember { mutableStateOf<JournalEntry?>(null) }
 
     Scaffold(
         containerColor = FitScreenBackground,
@@ -114,8 +118,11 @@ fun JournalScreen(
                 CircularProgressIndicator(color = FitAccentRed)
             }
 
-            state.entries.isEmpty() -> {
-                EmptyJournal(Modifier.padding(padding))
+            state.entries.isEmpty() && state.unfinished.isEmpty() -> {
+                Column(Modifier.padding(padding)) {
+                    state.errorMessage?.let { JournalError(it, viewModel::clearError) }
+                    EmptyJournal()
+                }
             }
 
             else -> {
@@ -126,6 +133,23 @@ fun JournalScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    state.errorMessage?.let { message ->
+                        item(key = "error") { JournalError(message, viewModel::clearError) }
+                    }
+                    if (state.unfinished.isNotEmpty()) {
+                        item(key = "unfinished_header") { SectionTitle("Незавершённые тренировки") }
+                        items(state.unfinished, key = { "unfinished_${it.log.id}" }) { entry ->
+                            UnfinishedCard(
+                                entry = entry,
+                                onResume = { onResumeWorkout(entry.log.workoutId) },
+                                onFinish = { finishTarget = entry },
+                                onDelete = { deleteTarget = entry }
+                            )
+                        }
+                        if (state.entries.isNotEmpty()) {
+                            item(key = "finished_header") { SectionTitle("Завершённые") }
+                        }
+                    }
                     items(state.entries, key = { it.log.id }) { entry ->
                         JournalCard(
                             entry = entry,
@@ -137,12 +161,33 @@ fun JournalScreen(
             }
         }
 
+        finishTarget?.let { entry ->
+            AlertDialog(
+                onDismissRequest = { finishTarget = null },
+                containerColor = FitCardWhite,
+                title = { Text("Завершить тренировку?", color = FitInk, fontWeight = FontWeight.Bold) },
+                text = { Text("Тренировка от ${entry.dateText} будет сохранена в журнал с уже отмеченными подходами.", color = FitMuted) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.finishUnfinished(entry.log.id)
+                        finishTarget = null
+                    }) { Text("Завершить", color = FitAccentTeal, fontWeight = FontWeight.Bold) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { finishTarget = null }) { Text("Отмена", color = FitMuted) }
+                }
+            )
+        }
+
         deleteTarget?.let { entry ->
             AlertDialog(
                 onDismissRequest = { deleteTarget = null },
                 containerColor = FitCardWhite,
                 title = { Text("Удалить запись?", color = FitInk, fontWeight = FontWeight.Bold) },
-                text = { Text("Запись от ${entry.dateText} будет удалена безвозвратно.", color = FitMuted) },
+                text = {
+                    val what = if (entry.log.finishedAt == null) "Незавершённая тренировка" else "Запись"
+                    Text("$what от ${entry.dateText} и все её подходы будут удалены безвозвратно.", color = FitMuted)
+                },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.deleteEntry(entry.log.id)
@@ -274,6 +319,59 @@ private fun JournalCard(
                         modifier = Modifier.size(22.dp)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, color = FitInk, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+}
+
+@Composable
+private fun JournalError(message: String, onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(message, color = FitAccentRed, fontSize = 13.sp, modifier = Modifier.weight(1f))
+        TextButton(onClick = onDismiss) { Text("Скрыть", color = FitMuted) }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun UnfinishedCard(
+    entry: JournalEntry,
+    onResume: () -> Unit,
+    onFinish: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF1B202A),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, FitAccentTeal.copy(alpha = 0.45f))
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text(
+                text = entry.log.workoutName,
+                color = FitInk,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(4.dp))
+            Text("Начата ${entry.dateText}", fontSize = 12.sp, color = FitMuted)
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = onResume) { Text("Продолжить", color = FitAccentTeal, fontWeight = FontWeight.Bold) }
+                TextButton(onClick = onFinish) { Text("Завершить", color = FitInk) }
+                TextButton(onClick = onDelete) { Text("Удалить", color = FitAccentRed) }
             }
         }
     }

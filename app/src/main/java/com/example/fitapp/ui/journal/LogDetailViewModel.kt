@@ -1,5 +1,6 @@
 package com.example.fitapp.ui.journal
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -52,9 +53,10 @@ class LogDetailViewModel @Inject constructor(
                     exercises = detail.exercises
                 )
             } catch (e: Exception) {
+                Log.e("LogDetailViewModel", "Operation failed", e)
                 _uiState.value = LogDetailUiState(
                     isLoading = false,
-                    errorMessage = "Ошибка загрузки: ${e.message}"
+                    errorMessage = "Не удалось загрузить тренировку."
                 )
             }
         }

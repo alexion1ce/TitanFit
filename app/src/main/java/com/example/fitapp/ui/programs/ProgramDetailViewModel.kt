@@ -1,5 +1,6 @@
 package com.example.fitapp.ui.programs
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -46,9 +47,10 @@ class ProgramDetailViewModel @Inject constructor(
                     totalSets = detail.exercises.sumOf { it.sets }
                 )
             } catch (e: Exception) {
+                Log.e("ProgramDetailViewModel", "Operation failed", e)
                 _uiState.value = ProgramDetailUiState(
                     isLoading = false,
-                    errorMessage = "Ошибка загрузки: ${e.message}"
+                    errorMessage = "Не удалось загрузить программу."
                 )
             }
         }

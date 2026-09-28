@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.44 - 2026-09-28
+
+Fixes from the 28.09.2026 code audit. Not yet built or run on a device.
+
+- Added JSON export/import of the journal, custom workouts, favorites and profile (Progress menu). Import merges and skips sessions already present.
+- Unfinished sessions are listed in the Journal with Continue / Finish / Delete, so "continue later" sessions are never hidden.
+- Cancelling a workout without saving now asks a second time; resetting progress requires typing a confirmation word.
+- Database seeding runs once per process, adds new muscle groups/equipment to existing databases, and no longer crashes screens on failure.
+- Exercise artwork loads through Coil with downsampling instead of decoding 1254 px PNGs on the main thread; two large PNGs recompressed losslessly.
+- Progress statistics and program lists load in a few batched queries instead of one query per workout.
+- The workout editor accepts the same exercise twice (stable row keys instead of exercise ids).
+- Friendlier error texts with logging, visible delete errors, guarded video links, monochrome notification icon, notification permission asked at the first rest timer.
+- Explicit backup rules, removed unused INTERNET permission and stale build rules, optional release signing via untracked `keystore.properties`, R8 enabled for release.
+- Added GitHub Actions CI (unit tests, lint, debug build) and unit tests for progress calculations and user messages.
+
 ## 0.4.43 - 2026-09-15
 
 - Preserved legacy source copies outside the Android source set and kept an original source archive.
