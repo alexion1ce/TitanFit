@@ -1,0 +1,4 @@
+// Keep verification output separate from the user's existing APKs and reports.
+gradle.beforeProject { p ->
+    p.layout.buildDirectory.set(new File(p.rootDir, "docs/fixes-2026-09-09/build/${p.name}"))
+}

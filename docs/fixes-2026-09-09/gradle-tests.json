@@ -1,0 +1,50 @@
+[
+  {
+    "suite": "com.example.fitapp.data.repository.ProgramRecommendationsTest",
+    "tests": 3,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "suite": "com.example.fitapp.data.repository.WeeklyVolumeCalculatorTest",
+    "tests": 3,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "suite": "com.example.fitapp.data.repository.WorkoutSessionLogicTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "suite": "com.example.fitapp.data.repository.WorkoutSessionRegressionTest",
+    "tests": 7,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "suite": "com.example.fitapp.data.repository.WorkoutStatisticsTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "suite": "com.example.fitapp.ui.builder.ExerciseParameterDraftTest",
+    "tests": 1,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "suite": "com.example.fitapp.ui.session.SessionInputTest",
+    "tests": 3,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "suite": "com.example.fitapp.ui.session.SessionWriteQueueTest",
+    "tests": 3,
+    "failures": 0,
+    "errors": 0
+  }
+]

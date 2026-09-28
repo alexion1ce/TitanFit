@@ -1,0 +1,117 @@
+{
+  "engine": "3.53.1",
+  "scope": "in-memory SQLite SQL checks, not Android/Room runtime",
+  "changed_template": [
+    [
+      10,
+      0,
+      120
+    ],
+    [
+      90,
+      1,
+      60
+    ]
+  ],
+  "collisions_and_duration": {
+    "groups": [
+      [
+        1,
+        90,
+        1,
+        90
+      ],
+      [
+        2,
+        90,
+        1,
+        90
+      ],
+      [
+        3,
+        10,
+        0,
+        120
+      ],
+      [
+        4,
+        90,
+        2,
+        180
+      ],
+      [
+        5,
+        50,
+        3,
+        60
+      ],
+      [
+        6,
+        60,
+        4,
+        60
+      ]
+    ],
+    "duration": [
+      [
+        0,
+        0.0,
+        30
+      ],
+      [
+        0,
+        0.0,
+        1
+      ]
+    ]
+  },
+  "archive_and_schema": {
+    "workouts": {
+      "isArchived": [
+        "INTEGER",
+        1,
+        "0"
+      ],
+      "presetCode": [
+        "TEXT",
+        0,
+        null
+      ]
+    },
+    "exercises": {
+      "isArchived": [
+        "INTEGER",
+        1,
+        "0"
+      ]
+    },
+    "set_logs": {
+      "exerciseOrder": [
+        "INTEGER",
+        1,
+        "0"
+      ],
+      "durationSeconds": [
+        "INTEGER",
+        0,
+        null
+      ],
+      "restSeconds": [
+        "INTEGER",
+        1,
+        "60"
+      ]
+    }
+  },
+  "room_schema": {
+    "status": "passed",
+    "fullyComparedTables": [
+      "workouts",
+      "workout_exercises",
+      "workout_logs",
+      "set_logs",
+      "exercise_catalog_meta"
+    ],
+    "partial": "exercises.isArchived"
+  }
+}

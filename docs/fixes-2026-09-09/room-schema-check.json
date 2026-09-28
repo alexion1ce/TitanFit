@@ -1,0 +1,383 @@
+{
+  "status": "passed",
+  "sqliteVersion": "3.53.1",
+  "roomSchemaVersion": 6,
+  "roomIdentityHash": "83bf57984eaa511b422fde7d2a698a8e",
+  "scope": "KSP-generated Room fresh createSql versus real SQL migrations 1 through 6, both executed in in-memory SQLite; not Android runtime",
+  "fullyComparedTables": {
+    "workouts": {
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 1
+        },
+        "name": {
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "type": {
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "notes": {
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "isArchived": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKeyPosition": 0
+        },
+        "presetCode": {
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKeyPosition": 0
+        }
+      },
+      "indices": {
+        "index_workouts_presetCode": {
+          "unique": true,
+          "columns": [
+            "presetCode"
+          ]
+        }
+      },
+      "foreignKeys": [],
+      "status": "match"
+    },
+    "workout_exercises": {
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 1
+        },
+        "workoutId": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "exerciseId": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "order": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "sets": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "reps": {
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "restSeconds": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        }
+      },
+      "indices": {
+        "index_workout_exercises_exerciseId": {
+          "unique": false,
+          "columns": [
+            "exerciseId"
+          ]
+        },
+        "index_workout_exercises_workoutId": {
+          "unique": false,
+          "columns": [
+            "workoutId"
+          ]
+        }
+      },
+      "foreignKeys": [
+        [
+          "exercises",
+          "exerciseId",
+          "id",
+          "NO ACTION",
+          "CASCADE",
+          "NONE"
+        ],
+        [
+          "workouts",
+          "workoutId",
+          "id",
+          "NO ACTION",
+          "CASCADE",
+          "NONE"
+        ]
+      ],
+      "status": "match"
+    },
+    "workout_logs": {
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 1
+        },
+        "workoutId": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "workoutName": {
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "startedAt": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "finishedAt": {
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "durationMin": {
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "restTimerTotalSeconds": {
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "restTimerEndsAt": {
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKeyPosition": 0
+        }
+      },
+      "indices": {
+        "index_workout_logs_workoutId": {
+          "unique": false,
+          "columns": [
+            "workoutId"
+          ]
+        }
+      },
+      "foreignKeys": [
+        [
+          "workouts",
+          "workoutId",
+          "id",
+          "NO ACTION",
+          "CASCADE",
+          "NONE"
+        ]
+      ],
+      "status": "match"
+    },
+    "set_logs": {
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 1
+        },
+        "logId": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "exerciseId": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "setNumber": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "weight": {
+          "type": "REAL",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "reps": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "done": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "exerciseOrder": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKeyPosition": 0
+        },
+        "durationSeconds": {
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "restSeconds": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "60",
+          "primaryKeyPosition": 0
+        }
+      },
+      "indices": {
+        "index_set_logs_logId_exerciseOrder_setNumber": {
+          "unique": false,
+          "columns": [
+            "logId",
+            "exerciseOrder",
+            "setNumber"
+          ]
+        },
+        "index_set_logs_exerciseId": {
+          "unique": false,
+          "columns": [
+            "exerciseId"
+          ]
+        },
+        "index_set_logs_logId": {
+          "unique": false,
+          "columns": [
+            "logId"
+          ]
+        }
+      },
+      "foreignKeys": [
+        [
+          "exercises",
+          "exerciseId",
+          "id",
+          "NO ACTION",
+          "CASCADE",
+          "NONE"
+        ],
+        [
+          "workout_logs",
+          "logId",
+          "id",
+          "NO ACTION",
+          "CASCADE",
+          "NONE"
+        ]
+      ],
+      "status": "match"
+    },
+    "exercise_catalog_meta": {
+      "columns": {
+        "exerciseId": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 1
+        },
+        "isFavorite": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "lastUsedAt": {
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKeyPosition": 0
+        },
+        "quickAddCount": {
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKeyPosition": 0
+        }
+      },
+      "indices": {
+        "index_exercise_catalog_meta_lastUsedAt": {
+          "unique": false,
+          "columns": [
+            "lastUsedAt"
+          ]
+        },
+        "index_exercise_catalog_meta_isFavorite": {
+          "unique": false,
+          "columns": [
+            "isFavorite"
+          ]
+        }
+      },
+      "foreignKeys": [
+        [
+          "exercises",
+          "exerciseId",
+          "id",
+          "NO ACTION",
+          "CASCADE",
+          "NONE"
+        ]
+      ],
+      "status": "match"
+    }
+  },
+  "partiallyComparedTables": {
+    "exercises": {
+      "isArchived": {
+        "type": "INTEGER",
+        "notNull": true,
+        "default": "0",
+        "primaryKeyPosition": 0
+      },
+      "status": "match"
+    }
+  },
+  "limitations": [
+    "The fixture intentionally defines only exercises.id and exercises.code from v1; exercises original fields, foreign keys and indices are not compared.",
+    "The fixture omits unchanged v1 muscle_groups and equipment tables.",
+    "This verifies SQLite schema equivalence against Room's generated schema; Room on-device migration validation still requires Android execution."
+  ]
+}
