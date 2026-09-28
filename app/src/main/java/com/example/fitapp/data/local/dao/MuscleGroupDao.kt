@@ -19,6 +19,10 @@ interface MuscleGroupDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<MuscleGroup>)
 
+    /** Adds reference rows by their unique code without touching existing ones. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMissing(items: List<MuscleGroup>)
+
     @Query("SELECT COUNT(*) FROM muscle_groups")
     suspend fun count(): Int
 }

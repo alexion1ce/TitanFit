@@ -31,7 +31,9 @@ data class WorkoutExerciseItem(
     val order: Int,
     val sets: Int,
     val reps: String,
-    val restSeconds: Int
+    val restSeconds: Int,
+    /** Editor-only row identity; lets the same exercise appear twice. Not stored. */
+    val editorKey: Long = 0
 )
 
 data class WorkoutDetail(
@@ -57,44 +59,57 @@ class WorkoutRepository @Inject constructor(
 
     /** Готовые встроенные программы (пресеты). */
     fun observePresets(): Flow<List<Workout>> = flow {
-        databaseInitializer.initializeIfNeeded()
+        // A failed seed must not crash the screen; existing presets are still shown.
+        databaseInitializer.tryInitialize()
         workoutDao.observeByType(WorkoutType.PRESET.storageKey).collect { emit(it) }
     }
 
     suspend fun getDetail(id: Long): WorkoutDetail? {
         val withEx = workoutDao.getWithExercises(id) ?: return null
-        val exerciseMap = withEx.exercises.map { it.exerciseId }.distinct()
+        return toDetails(listOf(withEx)).single()
+    }
+
+    /** Loads several workouts with shared exercise and muscle lookups. */
+    suspend fun getDetails(ids: List<Long>): Map<Long, WorkoutDetail> {
+        if (ids.isEmpty()) return emptyMap()
+        return toDetails(workoutDao.getWithExercisesByIds(ids)).associateBy { it.id }
+    }
+
+    private suspend fun toDetails(workouts: List<WorkoutWithExercises>): List<WorkoutDetail> {
+        val exerciseMap = workouts.flatMap { it.exercises }.map { it.exerciseId }.distinct()
             .let { ids ->
                 if (ids.isEmpty()) emptyMap()
                 else exerciseRepository.getByIds(ids).associateBy { it.id }
             }
-        val muscleNames = muscleGroupRepository.getAll().associate { it.code to it.name }
-        val muscleEmojis = muscleGroupRepository.getAll().associate { it.code to it.emoji }
+        val muscles = muscleGroupRepository.getAll().associateBy { it.code }
 
-        return WorkoutDetail(
-            id = withEx.workout.id,
-            name = withEx.workout.name,
-            notes = withEx.workout.notes,
-            type = WorkoutType.fromKey(withEx.workout.type),
-            exercises = withEx.exercises.sortedBy { it.order }.map { we ->
-                val ex = exerciseMap[we.exerciseId]
-                WorkoutExerciseItem(
-                    workoutExerciseId = we.id,
-                    exerciseId = we.exerciseId,
-                    exerciseCode = ex?.code.orEmpty(),
-                    equipmentCode = ex?.equipmentCode.orEmpty(),
-                    exerciseName = ex?.name ?: "Удалённое упражнение",
-                    muscleName = ex?.primaryMuscleCode?.let { muscleNames[it] } ?: "—",
-                    muscleEmoji = ex?.primaryMuscleCode?.let { muscleEmojis[it] } ?: "🏋️",
-                    primaryMuscleCode = ex?.primaryMuscleCode.orEmpty(),
-                    secondaryMuscleCode = ex?.secondaryMuscleCode,
-                    order = we.order,
-                    sets = we.sets,
-                    reps = we.reps,
-                    restSeconds = we.restSeconds
-                )
-            }
-        )
+        return workouts.map { withEx ->
+            WorkoutDetail(
+                id = withEx.workout.id,
+                name = withEx.workout.name,
+                notes = withEx.workout.notes,
+                type = WorkoutType.fromKey(withEx.workout.type),
+                exercises = withEx.exercises.sortedBy { it.order }.map { we ->
+                    val ex = exerciseMap[we.exerciseId]
+                    val muscle = ex?.primaryMuscleCode?.let { muscles[it] }
+                    WorkoutExerciseItem(
+                        workoutExerciseId = we.id,
+                        exerciseId = we.exerciseId,
+                        exerciseCode = ex?.code.orEmpty(),
+                        equipmentCode = ex?.equipmentCode.orEmpty(),
+                        exerciseName = ex?.name ?: "Удалённое упражнение",
+                        muscleName = muscle?.name ?: "—",
+                        muscleEmoji = muscle?.emoji ?: "🏋️",
+                        primaryMuscleCode = ex?.primaryMuscleCode.orEmpty(),
+                        secondaryMuscleCode = ex?.secondaryMuscleCode,
+                        order = we.order,
+                        sets = we.sets,
+                        reps = we.reps,
+                        restSeconds = we.restSeconds
+                    )
+                }
+            )
+        }
     }
 
     /** Создаёт новую тренировку и возвращает её id. */

@@ -13,6 +13,16 @@ interface SetLogDao {
     @Query("SELECT * FROM set_logs WHERE logId = :logId ORDER BY exerciseOrder, setNumber, id")
     suspend fun getByLog(logId: Long): List<SetLog>
 
+    /** All sets of finished workouts in one query, for progress statistics. */
+    @Query(
+        "SELECT s.* FROM set_logs s INNER JOIN workout_logs l ON l.id = s.logId " +
+            "WHERE l.finishedAt IS NOT NULL ORDER BY s.logId, s.exerciseOrder, s.setNumber, s.id"
+    )
+    suspend fun getForFinishedLogs(): List<SetLog>
+
+    @Query("SELECT * FROM set_logs ORDER BY logId, exerciseOrder, setNumber, id")
+    suspend fun getAll(): List<SetLog>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<SetLog>)
 

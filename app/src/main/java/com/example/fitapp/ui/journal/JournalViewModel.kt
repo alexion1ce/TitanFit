@@ -1,14 +1,16 @@
 package com.example.fitapp.ui.journal
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitapp.data.local.entity.WorkoutLog
 import com.example.fitapp.data.repository.WorkoutLogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -25,29 +27,43 @@ class JournalViewModel @Inject constructor(
     private val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("ru"))
 
     val uiState: StateFlow<JournalUiState> =
-        workoutLogRepository.observeAllLogs()
-            .map { logs ->
-                JournalUiState(
-                    isLoading = false,
-                    // Показываем только завершённые тренировки
-                    entries = logs
-                        .filter { it.finishedAt != null }
-                        .map { it.toEntry() },
-                    errorMessage = _errorMessage.value
-                )
-            }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = JournalUiState()
+        combine(workoutLogRepository.observeAllLogs(), _errorMessage) { logs, error ->
+            val (finished, unfinished) = logs.partition { it.finishedAt != null }
+            JournalUiState(
+                isLoading = false,
+                entries = finished.map { it.toEntry() },
+                unfinished = unfinished.map { it.toEntry() },
+                errorMessage = error
             )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = JournalUiState()
+        )
 
-    fun deleteEntry(logId: Long) {
+    fun deleteEntry(logId: Long) = runAction("Не удалось удалить запись. Попробуйте ещё раз.") {
+        workoutLogRepository.deleteLog(logId)
+    }
+
+    /** Saves an unfinished session to the journal with the sets marked so far. */
+    fun finishUnfinished(logId: Long) = runAction("Не удалось завершить тренировку. Попробуйте ещё раз.") {
+        if (!workoutLogRepository.finishWorkout(logId)) error("Log $logId not found")
+    }
+
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
+    private fun runAction(failureMessage: String, action: suspend () -> Unit) {
         viewModelScope.launch {
             try {
-                workoutLogRepository.deleteLog(logId)
+                action()
+                _errorMessage.value = null
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _errorMessage.value = "Не удалось удалить: ${e.message}"
+                Log.e(TAG, failureMessage, e)
+                _errorMessage.value = failureMessage
             }
         }
     }
@@ -56,5 +72,9 @@ class JournalViewModel @Inject constructor(
         val dateText = dateFormat.format(Date(startedAt))
         val durationText = durationMin?.let { "$it мин" } ?: "—"
         return JournalEntry(log = this, dateText = dateText, durationText = durationText)
+    }
+
+    private companion object {
+        const val TAG = "JournalViewModel"
     }
 }

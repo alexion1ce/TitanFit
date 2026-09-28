@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -8,19 +10,39 @@ plugins {
 
 android {
     namespace = "com.example.fitapp"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.fitapp"
+        // `-PappId=com.example.fitapp` builds a one-off APK over the old install,
+        // so its data can be exported before switching to the new id.
+        applicationId = providers.gradleProperty("appId").getOrElse("com.titanfit.app")
         minSdk = 26
-        targetSdk = 34
-        versionCode = 57
-        versionName = "0.4.43"
+        targetSdk = 35
+        versionCode = 58
+        versionName = "0.4.44"
+    }
+
+    // Release signing reads a local, untracked keystore.properties:
+    //   storeFile=..., storePassword=..., keyAlias=..., keyPassword=...
+    // Without it the release build stays unsigned, as before.
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val releaseSigning = if (keystorePropertiesFile.exists()) {
+        val props = Properties().apply { keystorePropertiesFile.inputStream().use { load(it) } }
+        signingConfigs.create("release") {
+            storeFile = rootProject.file(props.getProperty("storeFile"))
+            storePassword = props.getProperty("storePassword")
+            keyAlias = props.getProperty("keyAlias")
+            keyPassword = props.getProperty("keyPassword")
+        }
+    } else {
+        null
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            releaseSigning?.let { signingConfig = it }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

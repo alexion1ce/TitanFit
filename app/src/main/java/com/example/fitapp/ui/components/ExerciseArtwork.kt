@@ -1,7 +1,6 @@
 package com.example.fitapp.ui.components
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,10 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
 import com.example.fitapp.R
 
 import androidx.compose.foundation.BorderStroke
@@ -57,8 +56,10 @@ fun ExerciseArtworkThumbnail(
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.dp, Color(0xFF2B3038).copy(alpha = 0.5f))
         ) {
-            Image(
-                painter = painterResource(imageRes),
+            AsyncImage(
+                // Coil decodes off the main thread and downsamples to the view size;
+                // the source PNGs are 1254 px while thumbnails are 48-78 dp.
+                model = imageRes,
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
@@ -92,8 +93,10 @@ fun ExerciseArtworkHero(
             shape = RoundedCornerShape(18.dp),
             border = BorderStroke(1.dp, Color(0xFF2B3038))
         ) {
-            Image(
-                painter = painterResource(imageRes),
+            AsyncImage(
+                // Coil decodes off the main thread and downsamples to the view size;
+                // the source PNGs are 1254 px while thumbnails are 48-78 dp.
+                model = imageRes,
                 contentDescription = exerciseName,
                 modifier = Modifier
                     .fillMaxSize()
@@ -165,8 +168,8 @@ private fun FullScreenArtworkDialog(
             color = Color.Black
         ) {
             Box {
-                Image(
-                    painter = painterResource(imageRes),
+                AsyncImage(
+                    model = imageRes,
                     contentDescription = exerciseName,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit

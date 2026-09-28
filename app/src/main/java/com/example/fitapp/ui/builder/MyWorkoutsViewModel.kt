@@ -1,5 +1,6 @@
 package com.example.fitapp.ui.builder
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitapp.data.repository.WorkoutRepository
@@ -7,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -21,9 +23,11 @@ class MyWorkoutsViewModel @Inject constructor(
 
     val uiState: StateFlow<MyWorkoutsUiState> =
         workoutRepository.observeCustomWorkouts()
-            .map { workouts ->
+            .combine(_errorMessage) { workouts, error -> workouts to error }
+            .map { (workouts, error) ->
+                val details = workoutRepository.getDetails(workouts.map { it.id })
                 val cards = workouts.map { workout ->
-                    val detail = workoutRepository.getDetail(workout.id)
+                    val detail = details[workout.id]
                     val exercises = detail?.exercises.orEmpty()
                     val firstExercise = exercises.firstOrNull()
                     val muscleNames = exercises.map { it.muscleName }
@@ -49,7 +53,7 @@ class MyWorkoutsViewModel @Inject constructor(
                 MyWorkoutsUiState(
                     isLoading = false,
                     workoutCards = cards,
-                    errorMessage = _errorMessage.value
+                    errorMessage = error
                 )
             }
             .stateIn(
@@ -63,7 +67,8 @@ class MyWorkoutsViewModel @Inject constructor(
             try {
                 workoutRepository.deleteWorkout(id)
             } catch (e: Exception) {
-                _errorMessage.value = "Не удалось удалить: ${e.message}"
+                Log.e("MyWorkoutsViewModel", "Operation failed", e)
+                _errorMessage.value = "Не удалось удалить тренировку. Попробуйте ещё раз."
             }
         }
     }

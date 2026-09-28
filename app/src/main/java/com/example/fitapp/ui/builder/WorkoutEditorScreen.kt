@@ -78,7 +78,7 @@ fun WorkoutEditorScreen(
 
     LaunchedEffect(initialExerciseId, state.isLoading) {
         initialExerciseId?.takeIf { it > 0L && !state.isLoading }?.let { id ->
-            viewModel.addPickedExerciseIds(setOf(id))
+            viewModel.addInitialExercise(id)
         }
     }
 
@@ -199,11 +199,11 @@ private fun EditorContent(
                 }
             }
         } else {
-            itemsIndexed(state.exercises, key = { _, item -> item.exerciseId }) { index, item ->
+            itemsIndexed(state.exercises, key = { _, item -> item.editorKey }) { index, item ->
                 ExerciseInWorkoutCard(
                     item = item,
                     index = index + 1,
-                    draft = state.drafts[item.exerciseId] ?: item.parameterDraft(),
+                    draft = state.drafts[item.editorKey] ?: item.parameterDraft(),
                     onDraftChange = { viewModel.onExerciseParametersChanged(index, it) },
                     onMoveUp = { viewModel.onMoveExercise(index, index - 1) },
                     onMoveDown = { viewModel.onMoveExercise(index, index + 1) },

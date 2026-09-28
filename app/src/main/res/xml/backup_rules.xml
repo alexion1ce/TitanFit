@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and older: back up the workout database and profile, not transient timer state. -->
+<full-backup-content>
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="fitapp_user_profile.xml" />
+</full-backup-content>

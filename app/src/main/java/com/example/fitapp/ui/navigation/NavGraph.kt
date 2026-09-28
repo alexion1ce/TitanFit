@@ -173,6 +173,7 @@ fun NavGraph(
         composable(Destinations.JOURNAL) {
             JournalScreen(
                 onEntryClick = { logId -> navController.navigate(Destinations.logDetail(logId)) },
+                onResumeWorkout = { workoutId -> navController.navigate(Destinations.activeWorkout(workoutId)) },
                 onBack = {
                     navController.navigate(Destinations.PROGRESS) {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }

@@ -1,5 +1,7 @@
 package com.example.fitapp.ui.progress
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.LocalFireDepartment
@@ -34,6 +37,10 @@ import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -92,6 +99,16 @@ fun ProgressScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showResetDialog by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri -> uri?.let(viewModel::exportData) }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> uri?.let(viewModel::importData) }
+    val exportFileName = remember {
+        "titanfit-backup-" + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) + ".json"
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
@@ -137,20 +154,79 @@ fun ProgressScreen(
                 state = state,
                 onEntryClick = onEntryClick,
                 onResetClick = { showResetDialog = true },
+                onExportClick = { exportLauncher.launch(exportFileName) },
+                onImportClick = { showImportDialog = true },
                 onPeriodSelected = viewModel::onPeriodSelected,
                 onOpenJournal = onOpenJournal,
                 onToggleRecords = viewModel::toggleAllRecords
             )
         }
 
+        if (state.isBackupBusy) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = AccentTeal)
+            }
+        }
+
+        state.backupMessage?.let { message ->
+            AlertDialog(
+                onDismissRequest = viewModel::dismissBackupMessage,
+                title = { Text("Резервная копия") },
+                text = { Text(message) },
+                confirmButton = {
+                    TextButton(onClick = viewModel::dismissBackupMessage) { Text("Понятно") }
+                }
+            )
+        }
+
+        if (showImportDialog) {
+            AlertDialog(
+                onDismissRequest = { showImportDialog = false },
+                title = { Text("Импорт данных") },
+                text = {
+                    Text(
+                        "Тренировки, свои программы и избранное из файла добавятся к текущим. " +
+                            "Уже имеющиеся записи не удаляются и не дублируются. " +
+                            "Профиль (рост, вес, цель) будет заменён данными из файла."
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showImportDialog = false
+                        importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+                    }) { Text("Выбрать файл") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showImportDialog = false }) { Text("Отмена") }
+                }
+            )
+        }
+
         if (showResetDialog) {
+            var confirmation by remember { mutableStateOf("") }
+            val confirmed = confirmation.trim().equals(RESET_CONFIRMATION, ignoreCase = true)
             AlertDialog(
                 onDismissRequest = { showResetDialog = false },
                 title = { Text("Сбросить прогресс?") },
-                text = { Text("Будут удалены записи журнала и статистика прогресса. Программы и упражнения останутся.") },
+                text = {
+                    Column {
+                        Text(
+                            "Будут безвозвратно удалены весь журнал, включая незавершённые тренировки, и статистика. " +
+                                "Программы и упражнения останутся. Перед сбросом можно сохранить данные через меню «Экспорт данных»."
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text("Для подтверждения введите слово $RESET_CONFIRMATION")
+                        Spacer(Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = confirmation,
+                            onValueChange = { confirmation = it },
+                            singleLine = true
+                        )
+                    }
+                },
                 confirmButton = {
                     Button(
-                        enabled = !state.isResetting,
+                        enabled = confirmed && !state.isResetting,
                         onClick = {
                             showResetDialog = false
                             viewModel.resetProgress()
@@ -169,11 +245,15 @@ fun ProgressScreen(
     }
 }
 
+private const val RESET_CONFIRMATION = "УДАЛИТЬ"
+
 @Composable
 private fun ProgressContent(
     state: ProgressUiState,
     onEntryClick: (Long) -> Unit,
     onResetClick: () -> Unit,
+    onExportClick: () -> Unit,
+    onImportClick: () -> Unit,
     onPeriodSelected: (ProgressPeriod) -> Unit,
     onOpenJournal: () -> Unit,
     onToggleRecords: () -> Unit
@@ -186,7 +266,14 @@ private fun ProgressContent(
         contentPadding = PaddingValues(start = 16.dp, top = 42.dp, end = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item { ProgressHeader(onResetClick = onResetClick, resetEnabled = !state.isResetting) }
+        item {
+            ProgressHeader(
+                onResetClick = onResetClick,
+                onExportClick = onExportClick,
+                onImportClick = onImportClick,
+                enabled = !state.isResetting && !state.isBackupBusy
+            )
+        }
         item { PeriodTabs(state.selectedPeriod, onPeriodSelected) }
         item {
             VolumeAnalyticsCard(
@@ -226,7 +313,13 @@ private fun ProgressContent(
 }
 
 @Composable
-private fun ProgressHeader(onResetClick: () -> Unit, resetEnabled: Boolean) {
+private fun ProgressHeader(
+    onResetClick: () -> Unit,
+    onExportClick: () -> Unit,
+    onImportClick: () -> Unit,
+    enabled: Boolean
+) {
+    var menuOpen by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -239,10 +332,25 @@ private fun ProgressHeader(onResetClick: () -> Unit, resetEnabled: Boolean) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f)
         )
-        TextButton(enabled = resetEnabled, onClick = onResetClick) {
-            Icon(Icons.Outlined.Delete, contentDescription = null, tint = AccentRed, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Сброс", color = AccentRed)
+        Box {
+            IconButton(enabled = enabled, onClick = { menuOpen = true }) {
+                Icon(Icons.Outlined.MoreVert, contentDescription = "Данные", tint = Ink)
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text("Экспорт данных") },
+                    onClick = { menuOpen = false; onExportClick() }
+                )
+                DropdownMenuItem(
+                    text = { Text("Импорт данных") },
+                    onClick = { menuOpen = false; onImportClick() }
+                )
+                DropdownMenuItem(
+                    text = { Text("Сбросить прогресс", color = AccentRed) },
+                    leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null, tint = AccentRed) },
+                    onClick = { menuOpen = false; onResetClick() }
+                )
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.fitapp.data.repository
 
+import android.util.Log
 import androidx.room.withTransaction
 import com.example.fitapp.data.local.AppDatabase
 import com.example.fitapp.data.local.dao.EquipmentDao
@@ -12,12 +13,16 @@ import com.example.fitapp.data.local.entity.WorkoutExercise
 import com.example.fitapp.data.local.entity.WorkoutType
 import com.example.fitapp.data.seed.DatabaseSeeder
 import com.example.fitapp.data.seed.WorkoutPresets
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Отвечает за первичное наполнение базы данных справочниками, упражнениями
- * и готовыми программами. Запускается один раз при старте приложения.
+ * и готовыми программами. Выполняется один раз за процесс; при ошибке
+ * следующий вызов повторит попытку.
  */
 @Singleton
 class DatabaseInitializer @Inject constructor(
@@ -28,13 +33,34 @@ class DatabaseInitializer @Inject constructor(
     private val workoutDao: WorkoutDao,
     private val workoutExerciseDao: WorkoutExerciseDao
 ) {
-    suspend fun initializeIfNeeded() = db.withTransaction {
-        if (muscleGroupDao.count() == 0) {
-            muscleGroupDao.insertAll(DatabaseSeeder.muscleGroups)
+    private val mutex = Mutex()
+    @Volatile private var initialized = false
+
+    suspend fun initializeIfNeeded() {
+        if (initialized) return
+        mutex.withLock {
+            if (initialized) return
+            db.withTransaction { initialize() }
+            initialized = true
         }
-        if (equipmentDao.count() == 0) {
-            equipmentDao.insertAll(DatabaseSeeder.equipment)
-        }
+    }
+
+    /** Same as [initializeIfNeeded], but reports a failure instead of throwing. */
+    suspend fun tryInitialize(): Boolean = try {
+        initializeIfNeeded()
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.e(TAG, "Database initialization failed", e)
+        false
+    }
+
+    private suspend fun initialize() {
+        // Reference rows are added by code, so new muscle groups or equipment
+        // reach existing databases before exercises that reference them.
+        muscleGroupDao.insertMissing(DatabaseSeeder.muscleGroups)
+        equipmentDao.insertMissing(DatabaseSeeder.equipment)
         archiveDeprecatedExercises()
         updateRenamedExercises()
         seedMissingExercises()
@@ -100,5 +126,9 @@ class DatabaseInitializer @Inject constructor(
                 workoutExerciseDao.replaceWorkoutExercises(workoutId, workoutExercises)
             }
         }
+    }
+
+    private companion object {
+        const val TAG = "DatabaseInitializer"
     }
 }
