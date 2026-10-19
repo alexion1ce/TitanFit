@@ -41,7 +41,8 @@ data class WorkoutDetail(
     val name: String,
     val notes: String?,
     val type: WorkoutType,
-    val exercises: List<WorkoutExerciseItem>
+    val exercises: List<WorkoutExerciseItem>,
+    val isArchived: Boolean = false
 )
 
 @Singleton
@@ -89,6 +90,7 @@ class WorkoutRepository @Inject constructor(
                 name = withEx.workout.name,
                 notes = withEx.workout.notes,
                 type = WorkoutType.fromKey(withEx.workout.type),
+                isArchived = withEx.workout.isArchived,
                 exercises = withEx.exercises.sortedBy { it.order }.map { we ->
                     val ex = exerciseMap[we.exerciseId]
                     val muscle = ex?.primaryMuscleCode?.let { muscles[it] }

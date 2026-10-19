@@ -24,6 +24,11 @@ class UserProfileRepository @Inject constructor(
     private val _profileFlow = MutableStateFlow(loadProfile())
     val profileFlow: StateFlow<UserProfile> = _profileFlow.asStateFlow()
 
+    private val _selectedProgramId = MutableStateFlow(loadSelectedProgramId())
+
+    /** Program chosen at the end of onboarding; offered on the Today screen. */
+    val selectedProgramIdFlow: StateFlow<Long?> = _selectedProgramId.asStateFlow()
+
     fun loadProfile(): UserProfile {
         val genderStr = prefs.getString(KEY_GENDER, Gender.MALE.name) ?: Gender.MALE.name
         val age = prefs.getInt(KEY_AGE, 25)
@@ -74,6 +79,20 @@ class UserProfileRepository @Inject constructor(
         saveProfile(current.copy(location = location))
     }
 
+    fun saveSelectedProgramId(programId: Long?) {
+        val editor = prefs.edit()
+        if (programId != null && programId > 0) {
+            editor.putLong(KEY_SELECTED_PROGRAM, programId)
+        } else {
+            editor.remove(KEY_SELECTED_PROGRAM)
+        }
+        editor.apply()
+        _selectedProgramId.value = programId?.takeIf { it > 0 }
+    }
+
+    private fun loadSelectedProgramId(): Long? =
+        prefs.getLong(KEY_SELECTED_PROGRAM, 0L).takeIf { it > 0 }
+
     fun isCompleted(): Boolean = prefs.getBoolean(KEY_COMPLETED, false)
 
     companion object {
@@ -88,6 +107,7 @@ class UserProfileRepository @Inject constructor(
         private const val KEY_DURATION = "preferred_duration"
         private const val KEY_DAYS = "days"
         private const val KEY_COMPLETED = "onboarding_v2_completed"
+        private const val KEY_SELECTED_PROGRAM = "selected_program_id"
     }
 }
 

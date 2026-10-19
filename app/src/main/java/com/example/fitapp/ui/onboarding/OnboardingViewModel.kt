@@ -163,6 +163,7 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             val updatedProfile = _uiState.value.tempProfile.copy(onboardingCompleted = true)
             userProfileRepository.saveProfile(updatedProfile)
+            userProfileRepository.saveSelectedProgramId(_uiState.value.selectedProgramId)
             _uiState.value = _uiState.value.copy(isCompleted = true)
             onSuccess(_uiState.value.selectedProgramId)
         }

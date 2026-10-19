@@ -18,10 +18,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Assignment
-import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -29,6 +29,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,19 +59,37 @@ private data class BottomItem(
 )
 
 private val bottomItems = listOf(
-    BottomItem(Destinations.CATALOG, "Каталог", Icons.Outlined.FitnessCenter),
+    BottomItem(Destinations.TODAY, "Сегодня", Icons.Outlined.Home),
     BottomItem(Destinations.PROGRAMS, "Программы", Icons.AutoMirrored.Outlined.Assignment),
     BottomItem(Destinations.PROGRESS, "Прогресс", Icons.Outlined.Analytics),
-    BottomItem(Destinations.MY_WORKOUTS, "Мои", Icons.Outlined.Person)
+    BottomItem(Destinations.CATALOG, "Каталог", Icons.Outlined.FitnessCenter)
+)
+
+/** Screens without their own tab that keep the bar and highlight a parent tab. */
+private val parentTabs = mapOf(
+    Destinations.MY_WORKOUTS to Destinations.PROGRAMS,
+    Destinations.JOURNAL to Destinations.PROGRESS
 )
 
 @Composable
-fun MainScreen(startDestination: String = Destinations.CATALOG) {
+fun MainScreen(startDestination: String = Destinations.TODAY) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    var showStartSheet by rememberSaveable { mutableStateOf(false) }
 
-    val showBottomBar = currentRoute in bottomItems.map { it.route }
+    val showBottomBar = currentRoute in bottomItems.map { it.route } || currentRoute in parentTabs
+    val selectedTab = currentRoute?.let { parentTabs[it] } ?: currentRoute
+
+    fun navigateToTab(route: String) {
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     Scaffold(
         containerColor = FitScreenBackground,
@@ -76,21 +97,11 @@ fun MainScreen(startDestination: String = Destinations.CATALOG) {
             if (showBottomBar) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AppBottomBar(
-                        currentRoute = currentRoute,
+                        currentRoute = selectedTab,
                         onItemClick = { route ->
-                            if (currentRoute != route) {
-                                navController.navigate(route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
+                            if (currentRoute != route) navigateToTab(route)
                         },
-                        onCreateClick = {
-                            navController.navigate(Destinations.workoutEditor(-1L))
-                        }
+                        onStartClick = { showStartSheet = true }
                     )
                 }
             }
@@ -108,13 +119,35 @@ fun MainScreen(startDestination: String = Destinations.CATALOG) {
             )
         }
     }
+
+    if (showStartSheet) {
+        StartWorkoutSheet(
+            onDismiss = { showStartSheet = false },
+            onStartWorkout = { id ->
+                showStartSheet = false
+                navController.navigate(Destinations.activeWorkout(id))
+            },
+            onOpenPrograms = {
+                showStartSheet = false
+                navigateToTab(Destinations.PROGRAMS)
+            },
+            onOpenMyWorkouts = {
+                showStartSheet = false
+                navController.navigate(Destinations.MY_WORKOUTS) { launchSingleTop = true }
+            },
+            onCreateWorkout = {
+                showStartSheet = false
+                navController.navigate(Destinations.workoutEditor(-1L))
+            }
+        )
+    }
 }
 
 @Composable
 private fun AppBottomBar(
     currentRoute: String?,
     onItemClick: (String) -> Unit,
-    onCreateClick: () -> Unit
+    onStartClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -173,12 +206,12 @@ private fun AppBottomBar(
                     )
                 )
                 .border(1.5.dp, Color.White.copy(alpha = 0.35f), CircleShape)
-                .clickable(onClick = onCreateClick),
+                .clickable(onClick = onStartClick),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Outlined.Add,
-                contentDescription = "Создать тренировку",
+                imageVector = Icons.Outlined.PlayArrow,
+                contentDescription = "Начать тренировку",
                 tint = Color.White,
                 modifier = Modifier.size(38.dp)
             )

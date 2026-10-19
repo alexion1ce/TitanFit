@@ -18,8 +18,8 @@ android {
         applicationId = providers.gradleProperty("appId").getOrElse("com.titanfit.app")
         minSdk = 26
         targetSdk = 35
-        versionCode = 58
-        versionName = "0.4.44"
+        versionCode = 59
+        versionName = "0.4.45"
     }
 
     // Release signing reads a local, untracked keystore.properties:
