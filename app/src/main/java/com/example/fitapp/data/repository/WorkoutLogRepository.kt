@@ -231,6 +231,76 @@ class WorkoutLogRepository @Inject constructor(
             }
         )
     }
+
+    // ===================== СЕГОДНЯ =====================
+
+    /** Everything the Today screen needs; [logs] is the current content of workout_logs. */
+    suspend fun getTodaySnapshot(
+        logs: List<WorkoutLog>,
+        selectedProgramId: Long?,
+        weeklyGoal: Int
+    ): TodaySnapshot {
+        val now = Instant.now()
+        val zone = ZoneId.systemDefault()
+        val finished = logs.filter { it.finishedAt != null }
+        val sets = if (finished.isEmpty()) emptyList() else setLogDao.getForFinishedLogs()
+        val muscles = muscleGroupRepository.getAll()
+        val muscleNames = muscles.associate { it.code to it.name }
+
+        val unfinishedLog = logs.filter { it.finishedAt == null }.maxByOrNull { it.startedAt }
+        val unfinished = unfinishedLog?.let { log ->
+            val logSets = setLogDao.getByLog(log.id)
+            UnfinishedSession(
+                logId = log.id,
+                workoutId = log.workoutId,
+                workoutName = log.workoutName,
+                startedAt = log.startedAt,
+                doneSets = logSets.count { it.done },
+                totalSets = logSets.size
+            )
+        }
+
+        val candidateIds = (finished.map { it.workoutId } + listOfNotNull(selectedProgramId)).distinct()
+        val details = workoutRepository.getDetails(candidateIds)
+        val availableIds = details.values.filter { !it.isArchived && it.exercises.isNotEmpty() }
+            .map { it.id }.toSet()
+        val suggested = pickSuggestedWorkoutId(finished, availableIds, selectedProgramId, now)
+            ?.let { id -> details[id] }
+            ?.let { detail ->
+                SuggestedWorkout(
+                    workoutId = detail.id,
+                    name = detail.name,
+                    exerciseCount = detail.exercises.size,
+                    muscleNames = detail.exercises.map { it.muscleName }.filter { it != "—" }.distinct(),
+                    lastDoneAt = finished.filter { it.workoutId == detail.id }.maxOfOrNull { it.finishedAt!! }
+                )
+            }
+
+        val recentLogIds = finished
+            .filter { now.toEpochMilli() - it.finishedAt!! < RECOVERY_WINDOW_MS }
+            .map { it.id }.toSet()
+        val recentSets = sets.filter { it.logId in recentLogIds }
+        val exercises = exerciseRepository.getByIds(recentSets.map { it.exerciseId }.distinct())
+            .associateBy { it.id }
+
+        val (workoutsThisWeek, volumeThisWeek, volumeLastWeek) = calculateWeekTotals(finished, sets, now, zone)
+        return TodaySnapshot(
+            week = calculateWeekStrip(finished, now, zone),
+            workoutsThisWeek = workoutsThisWeek,
+            weeklyGoal = weeklyGoal,
+            volumeThisWeek = volumeThisWeek,
+            volumeLastWeek = volumeLastWeek,
+            unfinished = unfinished,
+            suggested = suggested,
+            lastWorkout = calculateLastWorkout(finished, sets),
+            recovery = calculateMuscleRecovery(finished, recentSets, exercises, now),
+            muscleNames = muscleNames
+        )
+    }
+
+    private companion object {
+        const val RECOVERY_WINDOW_MS = 72L * 60L * 60L * 1000L
+    }
 }
 
 data class ProgressSnapshot(

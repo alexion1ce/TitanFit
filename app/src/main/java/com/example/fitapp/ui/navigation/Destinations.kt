@@ -4,6 +4,7 @@ package com.example.fitapp.ui.navigation
  * Маршруты навигации приложения.
  */
 object Destinations {
+    const val TODAY = "today"
     const val CATALOG = "catalog"
     const val PROGRAMS = "programs"
     const val JOURNAL = "journal"

@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val startDestination = if (userProfileRepository.isCompleted()) {
-            Destinations.CATALOG
+            Destinations.TODAY
         } else {
             Destinations.ONBOARDING
         }

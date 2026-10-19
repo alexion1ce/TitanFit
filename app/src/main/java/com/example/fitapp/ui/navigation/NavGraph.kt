@@ -27,13 +27,14 @@ import com.example.fitapp.ui.programs.ProgramDetailScreen
 import com.example.fitapp.ui.programs.ProgramsScreen
 import com.example.fitapp.ui.progress.ProgressScreen
 import com.example.fitapp.ui.session.ActiveWorkoutScreen
+import com.example.fitapp.ui.today.TodayScreen
 
 import com.example.fitapp.ui.onboarding.OnboardingScreen
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    startDestination: String = Destinations.CATALOG,
+    startDestination: String = Destinations.TODAY,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -43,16 +44,32 @@ fun NavGraph(
     ) {
         composable(Destinations.ONBOARDING) {
             OnboardingScreen(
-                onFinish = { selectedProgramId ->
-                    val dest = if (selectedProgramId != null && selectedProgramId > 0) {
-                        Destinations.programDetail(selectedProgramId)
-                    } else {
-                        Destinations.PROGRAMS
-                    }
-                    navController.navigate(dest) {
-                        popUpTo(Destinations.ONBOARDING) { inclusive = true }
+                // The chosen program is saved and offered on the Today screen.
+                onFinish = { _ ->
+                    val start = navController.graph.findStartDestination()
+                    navController.navigate(Destinations.TODAY) {
+                        // First launch: onboarding is the root. Re-run from Programs: back to Today.
+                        popUpTo(start.id) { inclusive = start.route == Destinations.ONBOARDING }
+                        launchSingleTop = true
                     }
                 }
+            )
+        }
+
+        composable(Destinations.TODAY) {
+            TodayScreen(
+                onStartWorkout = { id -> navController.navigate(Destinations.activeWorkout(id)) },
+                onOpenProgram = { id -> navController.navigate(Destinations.programDetail(id)) },
+                onOpenPrograms = {
+                    navController.navigate(Destinations.PROGRAMS) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onOpenMyWorkouts = { navController.navigate(Destinations.MY_WORKOUTS) },
+                onCreateWorkout = { navController.navigate(Destinations.workoutEditor(-1L)) },
+                onOpenLog = { logId -> navController.navigate(Destinations.logDetail(logId)) }
             )
         }
 

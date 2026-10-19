@@ -36,26 +36,15 @@ fun MuscleMap(
     ) {
         Box(Modifier.fillMaxSize()) {
             Canvas(Modifier.fillMaxSize()) {
-                drawMuscleFigure(
-                    centerX = size.width * 0.32f,
-                    bodyColor = bodyColor,
-                    outlineColor = outlineColor,
-                    primaryColor = primaryColor,
-                    secondaryColor = secondaryColor,
-                    primaryMuscleCode = primaryMuscleCode,
-                    secondaryMuscleCode = secondaryMuscleCode,
-                    isBack = false
-                )
-                drawMuscleFigure(
-                    centerX = size.width * 0.68f,
-                    bodyColor = bodyColor,
-                    outlineColor = outlineColor,
-                    primaryColor = primaryColor,
-                    secondaryColor = secondaryColor,
-                    primaryMuscleCode = primaryMuscleCode,
-                    secondaryMuscleCode = secondaryMuscleCode,
-                    isBack = true
-                )
+                val muscleColor: (String) -> Color = { code ->
+                    when (code) {
+                        primaryMuscleCode -> primaryColor
+                        secondaryMuscleCode -> secondaryColor
+                        else -> bodyColor
+                    }
+                }
+                drawMuscleFigure(size.width * 0.32f, bodyColor, outlineColor, muscleColor, isBack = false)
+                drawMuscleFigure(size.width * 0.68f, bodyColor, outlineColor, muscleColor, isBack = true)
             }
         }
     }
@@ -76,24 +65,44 @@ fun MuscleMapHero(
     )
 }
 
+/**
+ * Front and back figures with several muscles highlighted at once, e.g. recent load:
+ * [fresh] muscles use the primary color, [recovering] ones the tertiary color.
+ */
+@Composable
+fun MuscleLoadMap(
+    fresh: Set<String>,
+    recovering: Set<String>,
+    modifier: Modifier = Modifier,
+    // Lighter than surfaceVariant so idle muscles stay visible on dark cards.
+    bodyColor: Color = Color(0xFF2E3542)
+) {
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
+    val freshColor = MaterialTheme.colorScheme.primary
+    val recoveringColor = MaterialTheme.colorScheme.tertiary
+
+    Canvas(modifier) {
+        val muscleColor: (String) -> Color = { code ->
+            when (code) {
+                in fresh -> freshColor
+                in recovering -> recoveringColor
+                else -> bodyColor
+            }
+        }
+        drawMuscleFigure(size.width * 0.32f, bodyColor, outlineColor, muscleColor, isBack = false)
+        drawMuscleFigure(size.width * 0.68f, bodyColor, outlineColor, muscleColor, isBack = true)
+    }
+}
+
 private fun DrawScope.drawMuscleFigure(
     centerX: Float,
     bodyColor: Color,
     outlineColor: Color,
-    primaryColor: Color,
-    secondaryColor: Color,
-    primaryMuscleCode: String,
-    secondaryMuscleCode: String?,
+    muscleColor: (String) -> Color,
     isBack: Boolean
 ) {
     val scale = minOf(size.width, size.height) / 260f
     val top = size.height * 0.12f
-
-    fun muscleColor(code: String): Color = when (code) {
-        primaryMuscleCode -> primaryColor
-        secondaryMuscleCode -> secondaryColor
-        else -> bodyColor
-    }
 
     fun rounded(x: Float, y: Float, w: Float, h: Float, color: Color, radius: Float = 12f) {
         drawRoundRect(

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.45 - 2026-10-19
+
+New Today home screen (step 1 of the 19.10 design proposals). Built on top of 0.4.44; not yet run on a device.
+
+- The app now opens on "Сегодня": greeting, Monday-to-Sunday strip with trained days and the weekly goal from onboarding, and weekly volume compared with the previous week.
+- One main card: continue an unfinished session, or start the next workout (the one done longest ago in the last four weeks, else the program chosen in onboarding), or pick a first program.
+- Muscle load map for the last 72 hours (worked under 48 h / recovering), and a link to the last finished workout.
+- The central bottom-bar button now opens a "Начать тренировку" sheet (continue, next, programs, my workouts, create) instead of going straight to the editor.
+- Bottom bar: Сегодня, Программы, Старт, Прогресс, Каталог. "Мои тренировки" moved to Today, the Start sheet and Programs; the Journal keeps the bar and highlights Progress.
+- Onboarding saves the chosen program and finishes on the Today screen.
+- Unit tests for the week strip, weekly totals, next-workout choice, muscle recovery and last-workout summary.
+
 ## 0.4.44 - 2026-09-28
 
 Fixes from the 28.09.2026 code audit. Not yet built or run on a device.
